@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Glow Ring behind shield -->
+    <path
+        android:pathData="M54,22 C68,22 80,31 80,48 C80,68 54,84 54,84 C54,84 28,68 28,48 C28,31 40,22 54,22 Z"
+        android:strokeColor="#200D9488"
+        android:strokeWidth="5" />
+    <!-- Shield Outer -->
+    <path
+        android:pathData="M54,26 C66,26 76,34 76,48 C76,65 54,80 54,80 C54,80 32,65 32,48 C32,34 42,26 54,26 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="32"
+                android:startY="26"
+                android:endX="76"
+                android:endY="80"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#14B8A6" />
+                <item android:offset="1.0" android:color="#0D9488" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- Inner Vault Shield Core -->
+    <path
+        android:pathData="M54,32 C62,32 70,38 70,49 C70,62 54,74 54,74 C54,74 38,62 38,49 C38,38 46,32 54,32 Z"
+        android:fillColor="#0A1118" />
+    <!-- Padlock Shackle -->
+    <path
+        android:pathData="M48,51 L48,46 C48,42.7 50.7,40 54,40 C57.3,40 60,42.7 60,46 L60,51"
+        android:strokeColor="#F59E0B"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round" />
+    <!-- Padlock Body -->
+    <path
+        android:pathData="M45,51 L63,51 C64.1,51 65,51.9 65,53 L65,63 C65,64.1 64.1,65 63,65 L45,65 C43.9,65 43,64.1 43,63 L43,53 C43,51.9 43.9,51 45,51 Z"
+        android:fillColor="#F59E0B" />
+    <!-- Keyhole / Dot -->
+    <path
+        android:pathData="M54,55 C54.8,55 55.5,55.7 55.5,56.5 C55.5,57.1 55.1,57.6 54.6,57.8 L55,60.5 L53,60.5 L53.4,57.8 C52.9,57.6 52.5,57.1 52.5,56.5 C52.5,55.7 53.2,55 54,55 Z"
+        android:fillColor="#0A1118" />
+</vector>

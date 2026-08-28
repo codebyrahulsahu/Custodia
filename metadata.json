@@ -1,0 +1,6 @@
+{
+  "name": "Custodia",
+  "description": "Family vault and records manager: family members, documents with OCR auto-scan, digital signatures, medical history, Google Drive backup, and PDF export.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
