@@ -208,6 +208,56 @@ object FileStorageHelper {
     }
 
     /**
+     * Shares the original uploaded document file (PDF as PDF, image as image) via the
+     * Android system share sheet, using the file's original name.
+     */
+    fun shareOriginalFile(
+        context: Context,
+        filePath: String?,
+        originalFileName: String?,
+        title: String
+    ) {
+        try {
+            if (filePath != null && File(filePath).exists()) {
+                val file = File(filePath)
+                val uri = FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.fileprovider",
+                    file
+                )
+                val displayName = originalFileName ?: file.name
+                val mimeType = inferMimeType(displayName)
+
+                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = mimeType
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    clipData = ClipData.newRawUri(displayName, uri)
+                    putExtra(Intent.EXTRA_SUBJECT, title)
+                    putExtra(Intent.EXTRA_TEXT, "Shared from Custodia Vault: $title")
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+
+                val chooser = Intent.createChooser(
+                    shareIntent,
+                    "Share Document (${if (mimeType == "application/pdf") "PDF" else "Image"})"
+                ).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(chooser)
+            } else {
+                Toast.makeText(
+                    context,
+                    "Original file is not available on this device",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to share original file: $title", e)
+            Toast.makeText(context, "Error sharing file: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    /**
      * Saves / Downloads a document or report to the device's public Downloads directory.
      */
     fun downloadDocumentToDevice(
