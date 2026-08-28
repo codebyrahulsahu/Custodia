@@ -2,33 +2,43 @@ name: Build Android APK
 
 on:
   push:
-    branches: [ main ] # Agar aapki branch master hai toh yahan master likhein
+    branches: [ main ]
+    paths-ignore: [ '**.apk' ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        cache: gradle
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
 
-    - name: Grant Execute Permission for Gradlew
-      run: chmod +x ./android/gradlew
-      # Agar aapka folder 'android' nahi kuch aur hai, toh upar 'android' ki jagah us folder ka naam likhein
+      - uses: gradle/actions/setup-gradle@v4
 
-    - name: Build APK
-      run: ./android/gradlew assembleDebug
-      # Agar folder ka naam alag hai, toh yahan bhi badlein
+      - name: Generate debug keystore
+        run: keytool -genkeypair -v -keystore debug.keystore -alias androiddebugkey -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
 
-    - name: Upload APK Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: app-debug-apk
-        path: android/app/build/outputs/apk/debug/app-debug.apk
+      - name: Build debug APK
+        run: ./gradlew assembleDebug --stacktrace
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Save APK to repo
+        continue-on-error: true
+        run: |
+          cp app/build/outputs/apk/debug/app-debug.apk Custodia-debug.apk
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Custodia-debug.apk
+          git commit -m "CI: built debug APK" && git push origin HEAD:${GITHUB_REF_NAME} || echo "no change to push"
