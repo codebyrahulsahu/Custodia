@@ -47,7 +47,10 @@ data class DocumentItem(
     val notes: String = "",
     val fileSize: String = "1.2 MB",
     val fileType: String = "PDF / Image",
-    val ocrExtracted: Boolean = false
+    val ocrExtracted: Boolean = false,
+    val filePath: String? = null,
+    val fileName: String? = null,
+    val isImage: Boolean = false
 )
 
 data class MemberSignature(
@@ -68,7 +71,8 @@ data class MedicalEntry(
     val title: String,
     val doctorOrClinic: String,
     val notes: String,
-    val attachedReportName: String? = null
+    val attachedReportName: String? = null,
+    val attachedReportPath: String? = null
 )
 
 data class DriveBackupInfo(

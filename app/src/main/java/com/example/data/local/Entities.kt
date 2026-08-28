@@ -96,7 +96,10 @@ data class DocumentEntity(
     val notes: String,
     val fileSize: String,
     val fileType: String,
-    val ocrExtracted: Boolean
+    val ocrExtracted: Boolean,
+    val filePath: String? = null,
+    val fileName: String? = null,
+    val isImage: Boolean = false
 ) {
     fun toDomain(): DocumentItem {
         return DocumentItem(
@@ -112,7 +115,10 @@ data class DocumentEntity(
             notes = notes,
             fileSize = fileSize,
             fileType = fileType,
-            ocrExtracted = ocrExtracted
+            ocrExtracted = ocrExtracted,
+            filePath = filePath,
+            fileName = fileName,
+            isImage = isImage
         )
     }
 
@@ -131,7 +137,10 @@ data class DocumentEntity(
                 notes = domain.notes,
                 fileSize = domain.fileSize,
                 fileType = domain.fileType,
-                ocrExtracted = domain.ocrExtracted
+                ocrExtracted = domain.ocrExtracted,
+                filePath = domain.filePath,
+                fileName = domain.fileName,
+                isImage = domain.isImage
             )
         }
     }
@@ -204,7 +213,8 @@ data class MedicalEntryEntity(
     val title: String,
     val doctorOrClinic: String,
     val notes: String,
-    val attachedReportName: String?
+    val attachedReportName: String?,
+    val attachedReportPath: String? = null
 ) {
     fun toDomain(): MedicalEntry {
         return MedicalEntry(
@@ -214,7 +224,8 @@ data class MedicalEntryEntity(
             title = title,
             doctorOrClinic = doctorOrClinic,
             notes = notes,
-            attachedReportName = attachedReportName
+            attachedReportName = attachedReportName,
+            attachedReportPath = attachedReportPath
         )
     }
 
@@ -227,7 +238,8 @@ data class MedicalEntryEntity(
                 title = domain.title,
                 doctorOrClinic = domain.doctorOrClinic,
                 notes = domain.notes,
-                attachedReportName = domain.attachedReportName
+                attachedReportName = domain.attachedReportName,
+                attachedReportPath = domain.attachedReportPath
             )
         }
     }

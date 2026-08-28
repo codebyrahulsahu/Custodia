@@ -193,6 +193,8 @@ fun CustodiaApp(viewModel: CustodiaViewModel = viewModel()) {
     // Modals & Dialogs
     // -------------------------------------------------------------------------
 
+    val context = androidx.compose.ui.platform.LocalContext.current
+
     if (showAddMemberModal) {
         AddEditMemberModal(
             memberToEdit = editingMember,
@@ -208,8 +210,24 @@ fun CustodiaApp(viewModel: CustodiaViewModel = viewModel()) {
             selectedMember = selectedMember!!,
             documentToEdit = editingDoc,
             onDismiss = { viewModel.closeDocumentModal() },
-            onSave = { id, memberId, title, docType, docNum, issuer, issueDate, expiryDate, notes, ocrExtracted ->
-                viewModel.saveDocument(id, memberId, title, docType, docNum, issuer, issueDate, expiryDate, notes, ocrExtracted)
+            onSave = { id, memberId, title, docType, docNum, issuer, issueDate, expiryDate, notes, ocrExtracted, filePath, fileName, fileSize, fileType, isImage ->
+                viewModel.saveDocument(
+                    id = id,
+                    memberId = memberId,
+                    title = title,
+                    documentType = docType,
+                    documentNumber = docNum,
+                    issuer = issuer,
+                    issueDate = issueDate,
+                    expiryDate = expiryDate,
+                    notes = notes,
+                    ocrExtracted = ocrExtracted,
+                    filePath = filePath,
+                    fileName = fileName,
+                    fileSize = fileSize,
+                    fileType = fileType,
+                    isImage = isImage
+                )
             }
         )
     }
@@ -227,7 +245,7 @@ fun CustodiaApp(viewModel: CustodiaViewModel = viewModel()) {
                 viewModel.deleteDocument(doc.id)
             },
             onDownloadPdfClick = { doc ->
-                viewModel.setViewingDocument(null)
+                viewModel.exportDocumentPdf(context, doc)
             }
         )
     }
@@ -239,8 +257,8 @@ fun CustodiaApp(viewModel: CustodiaViewModel = viewModel()) {
             onSaveDrawn = { strokes ->
                 viewModel.saveDrawnSignature(selectedMember!!.id, strokes)
             },
-            onUploadPreset = { tag ->
-                viewModel.saveUploadedSignatureImage(selectedMember!!.id, tag)
+            onSaveImageUri = { uri ->
+                viewModel.saveUploadedSignatureImage(selectedMember!!.id, uri)
             }
         )
     }
@@ -250,8 +268,17 @@ fun CustodiaApp(viewModel: CustodiaViewModel = viewModel()) {
             selectedMember = selectedMember!!,
             entryToEdit = editingMedicalEntry,
             onDismiss = { viewModel.closeMedicalModal() },
-            onSave = { id, memberId, date, title, doctor, notes, attachedReport ->
-                viewModel.saveMedicalEntry(id, memberId, date, title, doctor, notes, attachedReport)
+            onSave = { id, memberId, date, title, doctor, notes, attachedReportName, attachedReportPath ->
+                viewModel.saveMedicalEntry(
+                    id = id,
+                    memberId = memberId,
+                    date = date,
+                    title = title,
+                    doctorOrClinic = doctor,
+                    notes = notes,
+                    attachedReportName = attachedReportName,
+                    attachedReportPath = attachedReportPath
+                )
             }
         )
     }

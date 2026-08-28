@@ -286,7 +286,12 @@ class CustodiaViewModel(application: Application) : AndroidViewModel(application
         issueDate: String,
         expiryDate: String?,
         notes: String,
-        ocrExtracted: Boolean
+        ocrExtracted: Boolean,
+        filePath: String? = null,
+        fileName: String? = null,
+        fileSize: String = "1.2 MB",
+        fileType: String = "PDF / Image",
+        isImage: Boolean = false
     ) {
         val member = familyMembers.value.find { it.id == memberId }
         val memberName = member?.name ?: "Family Member"
@@ -303,7 +308,12 @@ class CustodiaViewModel(application: Application) : AndroidViewModel(application
                         issueDate = issueDate,
                         expiryDate = expiryDate,
                         notes = notes,
-                        ocrExtracted = ocrExtracted
+                        ocrExtracted = ocrExtracted,
+                        filePath = filePath ?: existing.filePath,
+                        fileName = fileName ?: existing.fileName,
+                        fileSize = if (filePath != null) fileSize else existing.fileSize,
+                        fileType = if (filePath != null) fileType else existing.fileType,
+                        isImage = if (filePath != null) isImage else existing.isImage
                     )
                     repository.updateDocument(updated)
                     showToast("Updated document: $title")
@@ -320,7 +330,12 @@ class CustodiaViewModel(application: Application) : AndroidViewModel(application
                     issueDate = issueDate,
                     expiryDate = expiryDate,
                     notes = notes,
-                    ocrExtracted = ocrExtracted
+                    ocrExtracted = ocrExtracted,
+                    filePath = filePath,
+                    fileName = fileName,
+                    fileSize = fileSize,
+                    fileType = fileType,
+                    isImage = isImage
                 )
                 repository.addDocument(newDoc)
                 showToast("Added document: $title")
@@ -420,7 +435,8 @@ class CustodiaViewModel(application: Application) : AndroidViewModel(application
         title: String,
         doctorOrClinic: String,
         notes: String,
-        attachedReportName: String?
+        attachedReportName: String?,
+        attachedReportPath: String? = null
     ) {
         viewModelScope.launch {
             if (id != null) {
@@ -431,7 +447,8 @@ class CustodiaViewModel(application: Application) : AndroidViewModel(application
                         title = title,
                         doctorOrClinic = doctorOrClinic,
                         notes = notes,
-                        attachedReportName = attachedReportName
+                        attachedReportName = attachedReportName,
+                        attachedReportPath = attachedReportPath ?: existing.attachedReportPath
                     )
                     repository.updateMedicalEntry(updated)
                     showToast("Updated medical record")
@@ -444,7 +461,8 @@ class CustodiaViewModel(application: Application) : AndroidViewModel(application
                     title = title,
                     doctorOrClinic = doctorOrClinic,
                     notes = notes,
-                    attachedReportName = attachedReportName
+                    attachedReportName = attachedReportName,
+                    attachedReportPath = attachedReportPath
                 )
                 repository.addMedicalEntry(newEntry)
                 showToast("Added medical consultation record")

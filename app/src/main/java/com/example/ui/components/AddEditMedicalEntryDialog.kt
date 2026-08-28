@@ -1,13 +1,18 @@
 package com.example.ui.components
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -16,8 +21,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AttachFile
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.MedicalServices
+import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -35,13 +45,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.data.FamilyMemberProfile
+import com.example.data.FileStorageHelper
 import com.example.data.MedicalEntry
+import com.example.ui.theme.ElectricCyan
 import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
@@ -49,6 +63,8 @@ import com.example.ui.theme.TrustTeal
 import com.example.ui.theme.VaultCardBorder
 import com.example.ui.theme.VaultNavyDark
 import com.example.ui.theme.VaultSurface
+import com.example.ui.theme.VerifiedGreen
+import java.io.File
 
 @Composable
 fun AddEditMedicalEntryDialog(
@@ -62,15 +78,51 @@ fun AddEditMedicalEntryDialog(
         title: String,
         doctorOrClinic: String,
         notes: String,
-        attachedReportName: String?
+        attachedReportName: String?,
+        attachedReportPath: String?
     ) -> Unit
 ) {
+    val context = LocalContext.current
+
     var title by remember { mutableStateOf(entryToEdit?.title ?: "") }
     var date by remember { mutableStateOf(entryToEdit?.date ?: "28 Aug 2026") }
     var doctorOrClinic by remember { mutableStateOf(entryToEdit?.doctorOrClinic ?: "") }
     var notes by remember { mutableStateOf(entryToEdit?.notes ?: "") }
-    var attachedReportName by remember { mutableStateOf(entryToEdit?.attachedReportName ?: "Lab_Report.pdf") }
-    var hasAttachment by remember { mutableStateOf(entryToEdit?.attachedReportName != null) }
+    var attachedReportName by remember { mutableStateOf(entryToEdit?.attachedReportName ?: "") }
+    var attachedReportPath by remember { mutableStateOf(entryToEdit?.attachedReportPath) }
+    var tempCameraFile by remember { mutableStateOf<File?>(null) }
+
+    // File manager launcher for lab reports
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            val savedInfo = FileStorageHelper.saveUriToVault(
+                context = context,
+                sourceUri = uri,
+                targetFolder = FileStorageHelper.getMedicalReportsDir(context)
+            )
+            if (savedInfo != null) {
+                attachedReportPath = savedInfo.filePath
+                attachedReportName = savedInfo.fileName
+            }
+        }
+    }
+
+    // Camera launcher
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success: Boolean ->
+        val capturedFile = tempCameraFile
+        if (success && capturedFile != null && capturedFile.exists()) {
+            val destFolder = FileStorageHelper.getMedicalReportsDir(context)
+            val destFile = File(destFolder, "med_camera_${System.currentTimeMillis()}.jpg")
+            capturedFile.copyTo(destFile, overwrite = true)
+
+            attachedReportPath = destFile.absolutePath
+            attachedReportName = destFile.name
+        }
+    }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -179,16 +231,114 @@ fun AddEditMedicalEntryDialog(
                         .testTag("input_medical_notes")
                 )
 
-                // Attached Report File
-                OutlinedTextField(
-                    value = attachedReportName,
-                    onValueChange = { attachedReportName = it },
-                    label = { Text("Attached Lab / Prescription File (Optional)") },
-                    placeholder = { Text("e.g. Blood_Test_Report_Aug2026.pdf") },
-                    singleLine = true,
-                    colors = custodiaTextFieldColors(),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                // Attached Report File Section
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(VaultSurface)
+                        .border(1.dp, VaultCardBorder, RoundedCornerShape(10.dp))
+                        .padding(12.dp)
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "ATTACH PRESCRIPTION / LAB REPORT",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextSecondary,
+                                letterSpacing = 0.5.sp
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Button(
+                                onClick = {
+                                    filePickerLauncher.launch("*/*")
+                                },
+                                shape = RoundedCornerShape(8.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = VaultNavyDark),
+                                modifier = Modifier.weight(1f).height(38.dp)
+                            ) {
+                                Icon(Icons.Default.FolderOpen, contentDescription = null, tint = ElectricCyan, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("File Manager", fontSize = 11.5.sp, color = ElectricCyan)
+                            }
+
+                            Button(
+                                onClick = {
+                                    try {
+                                        val (uri, file) = FileStorageHelper.createTempCameraUri(context)
+                                        tempCameraFile = file
+                                        cameraLauncher.launch(uri)
+                                    } catch (e: Exception) {
+                                        // Ignore
+                                    }
+                                },
+                                shape = RoundedCornerShape(8.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = VaultNavyDark),
+                                modifier = Modifier.weight(1f).height(38.dp)
+                            ) {
+                                Icon(Icons.Default.CameraAlt, contentDescription = null, tint = TrustTeal, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Take Photo", fontSize = 11.5.sp, color = TrustTeal)
+                            }
+                        }
+
+                        if (attachedReportName.isNotBlank() || attachedReportPath != null) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(VaultNavyDark)
+                                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Icon(Icons.Default.AttachFile, contentDescription = null, tint = VerifiedGreen, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = attachedReportName.ifBlank { "Attached_Report" },
+                                        fontSize = 11.5.sp,
+                                        color = TextPrimary,
+                                        maxLines = 1
+                                    )
+                                }
+
+                                Row {
+                                    if (attachedReportPath != null) {
+                                        IconButton(
+                                            onClick = { FileStorageHelper.openFile(context, attachedReportPath!!) },
+                                            modifier = Modifier.size(28.dp)
+                                        ) {
+                                            Icon(Icons.Default.OpenInNew, contentDescription = "Open", tint = ElectricCyan, modifier = Modifier.size(15.dp))
+                                        }
+                                    }
+                                    IconButton(
+                                        onClick = {
+                                            attachedReportPath = null
+                                            attachedReportName = ""
+                                        },
+                                        modifier = Modifier.size(28.dp)
+                                    ) {
+                                        Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color(0xFFEF4444), modifier = Modifier.size(15.dp))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
 
                 // Actions
                 Row(
@@ -216,7 +366,8 @@ fun AddEditMedicalEntryDialog(
                                     title.trim(),
                                     doctorOrClinic.trim(),
                                     notes.trim().ifBlank { "Consultation completed." },
-                                    if (attachedReportName.isNotBlank()) attachedReportName.trim() else null
+                                    if (attachedReportName.isNotBlank()) attachedReportName.trim() else null,
+                                    attachedReportPath
                                 )
                             }
                         },
