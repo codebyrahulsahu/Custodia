@@ -2,7 +2,7 @@ name: Build Android APK
 
 on:
   push:
-    branches: [ main ] # Agar aapki branch ka naam 'master' hai toh yahan master likhein
+    branches: [ main ] # Agar aapki branch master hai toh yahan master likhein
 
 jobs:
   build:
@@ -20,13 +20,15 @@ jobs:
         cache: gradle
 
     - name: Grant Execute Permission for Gradlew
-      run: chmod +x gradlew
+      run: chmod +x ./android/gradlew
+      # Agar aapka folder 'android' nahi kuch aur hai, toh upar 'android' ki jagah us folder ka naam likhein
 
     - name: Build APK
-      run: ./gradlew assembleDebug
+      run: ./android/gradlew assembleDebug
+      # Agar folder ka naam alag hai, toh yahan bhi badlein
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: app-debug-apk
-        path: app/build/outputs/apk/debug/app-debug.apk
+        path: android/app/build/outputs/apk/debug/app-debug.apk
