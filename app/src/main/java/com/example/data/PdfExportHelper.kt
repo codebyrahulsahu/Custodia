@@ -655,12 +655,16 @@ object PdfExportHelper {
             val intent = Intent(Intent.ACTION_SEND).apply {
                 type = "application/pdf"
                 putExtra(Intent.EXTRA_STREAM, uri)
+                clipData = android.content.ClipData.newRawUri(pdfFile.name, uri)
                 putExtra(Intent.EXTRA_SUBJECT, pdfFile.name)
+                putExtra(Intent.EXTRA_TEXT, "Exported from Custodia Family Vault: ${pdfFile.name}")
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
-            context.startActivity(Intent.createChooser(intent, "Open or Share PDF"))
+            val chooser = Intent.createChooser(intent, "Share PDF Document").apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(chooser)
         } catch (e: Exception) {
-            // Fallback intent if FileProvider fails
             val intent = Intent(Intent.ACTION_VIEW).apply {
                 setDataAndType(android.net.Uri.fromFile(pdfFile), "application/pdf")
                 flags = Intent.FLAG_ACTIVITY_NO_HISTORY or Intent.FLAG_ACTIVITY_NEW_TASK

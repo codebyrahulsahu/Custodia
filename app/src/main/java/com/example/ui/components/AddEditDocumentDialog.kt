@@ -135,8 +135,6 @@ fun AddEditDocumentDialog(
     var attachedFileType by remember { mutableStateOf(documentToEdit?.fileType ?: "PDF / Image") }
     var isAttachedImage by remember { mutableStateOf(documentToEdit?.isImage ?: false) }
 
-    var isScanningOcr by remember { mutableStateOf(false) }
-    var ocrStatusMessage by remember { mutableStateOf<String?>(null) }
     var tempCameraFile by remember { mutableStateOf<File?>(null) }
     var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
 
@@ -156,7 +154,6 @@ fun AddEditDocumentDialog(
                 attachedFileSize = savedInfo.fileSizeFormatted
                 attachedFileType = if (savedInfo.isImage) "Image" else "Document (${savedInfo.mimeType.substringAfterLast("/")})"
                 isAttachedImage = savedInfo.isImage
-                ocrStatusMessage = "File uploaded from File Manager. Tap 'Run OCR Scan' to auto-extract text."
             }
         }
     }
@@ -175,7 +172,6 @@ fun AddEditDocumentDialog(
             attachedFileSize = FileStorageHelper.formatFileSize(destFile.length())
             attachedFileType = "Photo / Camera Scan"
             isAttachedImage = true
-            ocrStatusMessage = "Camera photo captured. Tap 'Run OCR Scan' to auto-extract text."
         }
     }
 
@@ -304,7 +300,7 @@ fun AddEditDocumentDialog(
                                         tempCameraFile = file
                                         cameraLauncher.launch(uri)
                                     } catch (e: Exception) {
-                                        ocrStatusMessage = "Camera error: ${e.message}"
+                                        android.widget.Toast.makeText(context, "Camera error: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
                                     }
                                 },
                                 shape = RoundedCornerShape(8.dp),
@@ -398,135 +394,6 @@ fun AddEditDocumentDialog(
                                     }
                                 }
                             }
-                        }
-                    }
-                }
-
-                // SMART OCR SCAN CARD (Explicit User Triggered)
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(VaultSurface)
-                        .border(
-                            1.dp,
-                            if (ocrExtracted) VerifiedGreen.copy(alpha = 0.4f) else ElectricCyan.copy(alpha = 0.3f),
-                            RoundedCornerShape(10.dp)
-                        )
-                        .padding(12.dp)
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Icon(
-                                    imageVector = if (ocrExtracted) Icons.Default.CheckCircle else Icons.Default.DocumentScanner,
-                                    contentDescription = null,
-                                    tint = if (ocrExtracted) VerifiedGreen else ElectricCyan,
-                                    modifier = Modifier.size(22.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Column {
-                                    Text(
-                                        text = if (ocrExtracted) "OCR Extraction Complete" else "Smart OCR Text Extraction",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 12.5.sp,
-                                        color = if (ocrExtracted) VerifiedGreen else TextPrimary
-                                    )
-                                    Text(
-                                        text = if (attachedFilePath != null) "Ready to scan attached file" else "Attach a file above to run OCR",
-                                        fontSize = 10.5.sp,
-                                        color = TextSecondary
-                                    )
-                                }
-                            }
-
-                            Button(
-                                onClick = {
-                                    if (attachedFilePath == null && attachedFileName == null) {
-                                        ocrStatusMessage = "Please upload a document from File Manager or take a Photo first!"
-                                        return@Button
-                                    }
-
-                                    coroutineScope.launch {
-                                        isScanningOcr = true
-                                        ocrStatusMessage = "Scanning and analyzing document text..."
-                                        delay(1200)
-
-                                        val ocrResult = FileStorageHelper.performSmartOcr(
-                                            context = context,
-                                            filePath = attachedFilePath,
-                                            fileName = attachedFileName
-                                        )
-
-                                        if (ocrResult.detectedType != null) {
-                                            documentType = ocrResult.detectedType
-                                        }
-                                        if (ocrResult.detectedNumber != null) {
-                                            documentNumber = ocrResult.detectedNumber
-                                        }
-                                        if (ocrResult.detectedTitle != null) {
-                                            title = ocrResult.detectedTitle
-                                        }
-                                        if (ocrResult.detectedIssuer != null) {
-                                            issuer = ocrResult.detectedIssuer
-                                        }
-                                        if (ocrResult.detectedIssueDate != null) {
-                                            issueDate = ocrResult.detectedIssueDate
-                                        }
-                                        if (ocrResult.detectedExpiryDate != null) {
-                                            expiryDate = ocrResult.detectedExpiryDate
-                                            isPermanent = false
-                                        }
-
-                                        ocrExtracted = true
-                                        isScanningOcr = false
-                                        ocrStatusMessage = "OCR Successful! Fields filled automatically from your document."
-                                    }
-                                },
-                                enabled = !isScanningOcr,
-                                shape = RoundedCornerShape(8.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = if (ocrExtracted) VaultCardBorder else ElectricCyan
-                                ),
-                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                                modifier = Modifier
-                                    .height(34.dp)
-                                    .testTag("btn_auto_scan_ocr")
-                            ) {
-                                if (isScanningOcr) {
-                                    CircularProgressIndicator(modifier = Modifier.size(14.dp), color = Color.White, strokeWidth = 2.dp)
-                                } else {
-                                    Icon(
-                                        Icons.Default.AutoFixHigh,
-                                        contentDescription = null,
-                                        tint = if (ocrExtracted) TextSecondary else Color.Black,
-                                        modifier = Modifier.size(14.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text(
-                                        text = if (ocrExtracted) "Re-Scan" else "Run OCR",
-                                        fontSize = 11.5.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (ocrExtracted) TextSecondary else Color.Black
-                                    )
-                                }
-                            }
-                        }
-
-                        if (ocrStatusMessage != null) {
-                            Text(
-                                text = ocrStatusMessage!!,
-                                fontSize = 11.sp,
-                                color = if (ocrExtracted) VerifiedGreen else ElectricCyan,
-                                lineHeight = 14.sp
-                            )
                         }
                     }
                 }

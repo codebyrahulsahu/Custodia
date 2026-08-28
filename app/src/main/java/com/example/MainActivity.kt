@@ -104,7 +104,7 @@ fun CustodiaApp(viewModel: CustodiaViewModel = viewModel()) {
                 showAddMemberButton = selectedMemberId == null
             )
         },
-        containerColor = VaultNavy
+        containerColor = com.example.ui.theme.BackgroundWhite
     ) { innerPadding ->
         Box(
             modifier = Modifier

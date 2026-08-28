@@ -1,18 +1,30 @@
 package com.example.data
 
+import android.content.ClipData
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.pdf.PdfRenderer
 import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.os.ParcelFileDescriptor
+import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.util.Log
+import android.widget.Toast
 import androidx.core.content.FileProvider
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.InputStream
-import java.text.SimpleDateFormat
-import java.util.Date
+import java.io.OutputStream
 import java.util.Locale
 import java.util.UUID
 
@@ -22,16 +34,6 @@ data class SavedFileInfo(
     val fileSizeFormatted: String,
     val mimeType: String,
     val isImage: Boolean
-)
-
-data class OcrExtractedData(
-    val detectedType: String?,
-    val detectedNumber: String?,
-    val detectedTitle: String?,
-    val detectedIssuer: String?,
-    val detectedIssueDate: String?,
-    val detectedExpiryDate: String?,
-    val extractedRawText: String
 )
 
 object FileStorageHelper {
@@ -55,10 +57,22 @@ object FileStorageHelper {
         return dir
     }
 
+    fun getExportsDir(context: Context): File {
+        val dir = File(context.cacheDir, "custodia_exports")
+        if (!dir.exists()) dir.mkdirs()
+        return dir
+    }
+
+    /**
+     * Creates a temp file and content URI for camera photography.
+     */
     fun createTempCameraUri(context: Context): Pair<Uri, File> {
         val cacheDir = File(context.cacheDir, "camera_captures")
         if (!cacheDir.exists()) cacheDir.mkdirs()
         val tempFile = File(cacheDir, "camera_${System.currentTimeMillis()}.jpg")
+        if (!tempFile.exists()) {
+            tempFile.createNewFile()
+        }
         val uri = FileProvider.getUriForFile(
             context,
             "${context.packageName}.fileprovider",
@@ -67,6 +81,9 @@ object FileStorageHelper {
         return Pair(uri, tempFile)
     }
 
+    /**
+     * Copies any selected URI (from File Manager, Gallery, etc.) to internal vault storage.
+     */
     fun saveUriToVault(context: Context, sourceUri: Uri, targetFolder: File): SavedFileInfo? {
         return try {
             val contentResolver = context.contentResolver
@@ -84,7 +101,8 @@ object FileStorageHelper {
 
             val mimeType = contentResolver.getType(sourceUri) ?: inferMimeType(displayName)
             val extension = getExtension(displayName, mimeType)
-            val uniqueFileName = "${UUID.randomUUID().toString().take(8)}_$displayName"
+            val safeName = displayName.replace("[^a-zA-Z0-9._-]".toRegex(), "_")
+            val uniqueFileName = "${UUID.randomUUID().toString().take(8)}_$safeName"
             val destFile = File(targetFolder, uniqueFileName)
 
             contentResolver.openInputStream(sourceUri)?.use { input ->
@@ -110,27 +128,6 @@ object FileStorageHelper {
         }
     }
 
-    fun saveBitmapToVault(context: Context, bitmap: Bitmap, targetFolder: File, prefix: String): SavedFileInfo? {
-        return try {
-            val fileName = "${prefix}_${System.currentTimeMillis()}.png"
-            val destFile = File(targetFolder, fileName)
-            FileOutputStream(destFile).use { out ->
-                bitmap.compress(Bitmap.CompressFormat.PNG, 95, out)
-            }
-            val sizeFormatted = formatFileSize(destFile.length())
-            SavedFileInfo(
-                filePath = destFile.absolutePath,
-                fileName = fileName,
-                fileSizeFormatted = sizeFormatted,
-                mimeType = "image/png",
-                isImage = true
-            )
-        } catch (e: Exception) {
-            Log.e(TAG, "Error saving bitmap to vault", e)
-            null
-        }
-    }
-
     fun formatFileSize(bytes: Long): String {
         val kb = bytes / 1024f
         return when {
@@ -140,13 +137,15 @@ object FileStorageHelper {
         }
     }
 
-    private fun inferMimeType(fileName: String): String {
+    fun inferMimeType(fileName: String): String {
         val lower = fileName.lowercase()
         return when {
             lower.endsWith(".pdf") -> "application/pdf"
             lower.endsWith(".png") -> "image/png"
             lower.endsWith(".jpg") || lower.endsWith(".jpeg") -> "image/jpeg"
             lower.endsWith(".webp") -> "image/webp"
+            lower.endsWith(".doc") || lower.endsWith(".docx") -> "application/msword"
+            lower.endsWith(".txt") -> "text/plain"
             else -> "application/octet-stream"
         }
     }
@@ -164,10 +163,337 @@ object FileStorageHelper {
         }
     }
 
+    /**
+     * Shares the real document file (PDF as PDF, Image as Image) via Android system share sheet.
+     * If no physical file was uploaded, seamlessly generates and shares the official PDF summary!
+     */
+    fun shareDocument(
+        context: Context,
+        document: DocumentItem,
+        member: FamilyMemberProfile? = null
+    ) {
+        try {
+            if (document.filePath != null && File(document.filePath).exists()) {
+                val file = File(document.filePath)
+                val uri = FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.fileprovider",
+                    file
+                )
+                val mimeType = inferMimeType(document.fileName ?: file.name)
+
+                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = mimeType
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    clipData = ClipData.newRawUri(document.title, uri)
+                    putExtra(Intent.EXTRA_SUBJECT, "${document.title} - ${document.memberName}")
+                    putExtra(Intent.EXTRA_TEXT, "Shared from Custodia Vault: ${document.title} (${document.documentType} - ${document.documentNumber})")
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+
+                val chooser = Intent.createChooser(shareIntent, "Share Document (${if (mimeType == "application/pdf") "PDF" else "Image"})").apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(chooser)
+            } else {
+                // Generate official PDF Dossier and share
+                val resolvedMember = member ?: FamilyMemberProfile(name = document.memberName)
+                val generatedPdf = PdfExportHelper.exportSingleDocumentPdf(context, resolvedMember, document)
+                PdfExportHelper.shareOrOpenPdf(context, generatedPdf)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to share document: ${document.title}", e)
+            Toast.makeText(context, "Error sharing document: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    /**
+     * Saves / Downloads a document or report to the device's public Downloads directory.
+     */
+    fun downloadDocumentToDevice(
+        context: Context,
+        document: DocumentItem,
+        member: FamilyMemberProfile? = null
+    ) {
+        try {
+            val sourceFile = if (document.filePath != null && File(document.filePath).exists()) {
+                File(document.filePath)
+            } else {
+                val resolvedMember = member ?: FamilyMemberProfile(name = document.memberName)
+                PdfExportHelper.exportSingleDocumentPdf(context, resolvedMember, document)
+            }
+
+            val targetName = (document.fileName ?: "${document.title.replace(" ", "_")}_${document.documentNumber.take(6)}.pdf")
+            val result = saveFileToPublicDownloads(context, sourceFile, targetName, inferMimeType(targetName))
+
+            if (result) {
+                Toast.makeText(context, "Downloaded to device: $targetName", Toast.LENGTH_LONG).show()
+            } else {
+                // Fallback share / save
+                shareDocument(context, document, member)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Download error", e)
+            Toast.makeText(context, "Download failed: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    /**
+     * Shares a Signature as an image PNG or as an official PDF certificate.
+     */
+    fun shareSignature(
+        context: Context,
+        signature: MemberSignature,
+        member: FamilyMemberProfile? = null,
+        asPdf: Boolean = false
+    ) {
+        try {
+            if (asPdf) {
+                val resolvedMember = member ?: FamilyMemberProfile(name = signature.signerName)
+                val pdfFile = PdfExportHelper.exportSingleSignaturePdf(context, resolvedMember, signature)
+                PdfExportHelper.shareOrOpenPdf(context, pdfFile)
+            } else {
+                val sigFile = createSignatureImageFile(context, signature)
+                if (sigFile != null && sigFile.exists()) {
+                    val uri = FileProvider.getUriForFile(
+                        context,
+                        "${context.packageName}.fileprovider",
+                        sigFile
+                    )
+                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                        type = "image/png"
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        clipData = ClipData.newRawUri(signature.signerName, uri)
+                        putExtra(Intent.EXTRA_SUBJECT, "Signature - ${signature.signerName}")
+                        putExtra(Intent.EXTRA_TEXT, "Digital Signature Specimen for ${signature.signerName} • Custodia Vault (${signature.certificateTag})")
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    val chooser = Intent.createChooser(shareIntent, "Share Signature").apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    context.startActivity(chooser)
+                } else {
+                    Toast.makeText(context, "Could not generate signature image", Toast.LENGTH_SHORT).show()
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error sharing signature", e)
+            Toast.makeText(context, "Error sharing signature: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    /**
+     * Downloads Signature Image or PDF to device storage.
+     */
+    fun downloadSignatureToDevice(
+        context: Context,
+        signature: MemberSignature,
+        member: FamilyMemberProfile? = null,
+        asPdf: Boolean = false
+    ) {
+        try {
+            val sourceFile = if (asPdf) {
+                val resolvedMember = member ?: FamilyMemberProfile(name = signature.signerName)
+                PdfExportHelper.exportSingleSignaturePdf(context, resolvedMember, signature)
+            } else {
+                createSignatureImageFile(context, signature)
+            }
+
+            if (sourceFile != null && sourceFile.exists()) {
+                val targetName = if (asPdf) {
+                    "Signature_${signature.signerName.replace(" ", "_")}.pdf"
+                } else {
+                    "Signature_${signature.signerName.replace(" ", "_")}.png"
+                }
+                val mime = if (asPdf) "application/pdf" else "image/png"
+                val saved = saveFileToPublicDownloads(context, sourceFile, targetName, mime)
+                if (saved) {
+                    Toast.makeText(context, "Downloaded signature to device: $targetName", Toast.LENGTH_LONG).show()
+                } else {
+                    shareSignature(context, signature, member, asPdf)
+                }
+            } else {
+                Toast.makeText(context, "Could not prepare signature file", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Download signature error", e)
+            Toast.makeText(context, "Download failed: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    /**
+     * Shares a Medical Entry attached report or summary PDF.
+     */
+    fun shareMedicalEntry(
+        context: Context,
+        entry: MedicalEntry,
+        member: FamilyMemberProfile? = null
+    ) {
+        try {
+            if (entry.attachedReportPath != null && File(entry.attachedReportPath).exists()) {
+                val file = File(entry.attachedReportPath)
+                val uri = FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.fileprovider",
+                    file
+                )
+                val mimeType = inferMimeType(entry.attachedReportName ?: file.name)
+                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = mimeType
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    clipData = ClipData.newRawUri(entry.title, uri)
+                    putExtra(Intent.EXTRA_SUBJECT, "Medical Report: ${entry.title}")
+                    putExtra(Intent.EXTRA_TEXT, "Medical Consultation Record: ${entry.title} (${entry.date}) • Doctor: ${entry.doctorOrClinic}")
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                val chooser = Intent.createChooser(shareIntent, "Share Medical Report").apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(chooser)
+            } else {
+                val resolvedMember = member ?: FamilyMemberProfile(name = "Family Member")
+                val pdfFile = PdfExportHelper.exportSingleMedicalEntryPdf(context, resolvedMember, entry)
+                PdfExportHelper.shareOrOpenPdf(context, pdfFile)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error sharing medical entry", e)
+            Toast.makeText(context, "Error sharing: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    /**
+     * Downloads Medical Entry attached report or summary PDF to device.
+     */
+    fun downloadMedicalEntryToDevice(
+        context: Context,
+        entry: MedicalEntry,
+        member: FamilyMemberProfile? = null
+    ) {
+        try {
+            val sourceFile = if (entry.attachedReportPath != null && File(entry.attachedReportPath).exists()) {
+                File(entry.attachedReportPath)
+            } else {
+                val resolvedMember = member ?: FamilyMemberProfile(name = "Family Member")
+                PdfExportHelper.exportSingleMedicalEntryPdf(context, resolvedMember, entry)
+            }
+
+            val targetName = entry.attachedReportName ?: "Medical_${entry.title.replace(" ", "_")}.pdf"
+            val mime = inferMimeType(targetName)
+            val saved = saveFileToPublicDownloads(context, sourceFile, targetName, mime)
+            if (saved) {
+                Toast.makeText(context, "Downloaded medical record: $targetName", Toast.LENGTH_LONG).show()
+            } else {
+                shareMedicalEntry(context, entry, member)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Download medical error", e)
+            Toast.makeText(context, "Download failed: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    /**
+     * Renders a digital signature into a clean PNG file for sharing & downloading.
+     */
+    fun createSignatureImageFile(context: Context, signature: MemberSignature): File? {
+        return try {
+            if (!signature.imageUri.isNullOrBlank()) {
+                val f = File(signature.imageUri)
+                if (f.exists()) return f
+            }
+
+            val width = 600
+            val height = 300
+            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bitmap)
+            canvas.drawColor(Color.WHITE)
+
+            val paint = Paint().apply {
+                color = Color.parseColor("#1D4ED8") // Blue ink
+                style = Paint.Style.STROKE
+                strokeWidth = 5f
+                strokeCap = Paint.Cap.ROUND
+                strokeJoin = Paint.Join.ROUND
+                isAntiAlias = true
+            }
+
+            if (signature.pathPoints.isNotEmpty()) {
+                for (stroke in signature.pathPoints) {
+                    if (stroke.isNotEmpty()) {
+                        val path = Path()
+                        path.moveTo(stroke.first().x, stroke.first().y)
+                        for (i in 1 until stroke.size) {
+                            path.lineTo(stroke[i].x, stroke[i].y)
+                        }
+                        canvas.drawPath(path, paint)
+                    }
+                }
+            } else {
+                val textPaint = Paint().apply {
+                    color = Color.parseColor("#1D4ED8")
+                    textSize = 36f
+                    textAlign = Paint.Align.CENTER
+                    isAntiAlias = true
+                }
+                canvas.drawText("✍️ ${signature.signerName}", width / 2f, height / 2f + 12f, textPaint)
+            }
+
+            val sigFolder = getSignaturesDir(context)
+            val outFile = File(sigFolder, "sig_export_${signature.id.take(8)}.png")
+            FileOutputStream(outFile).use { out ->
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+            }
+            outFile
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to create signature file", e)
+            null
+        }
+    }
+
+    /**
+     * Helper to write any file to Public Downloads or App Storage directory.
+     */
+    private fun saveFileToPublicDownloads(context: Context, sourceFile: File, displayName: String, mimeType: String): Boolean {
+        return try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val contentValues = ContentValues().apply {
+                    put(MediaStore.Downloads.DISPLAY_NAME, displayName)
+                    put(MediaStore.Downloads.MIME_TYPE, mimeType)
+                    put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/Custodia")
+                }
+                val uri = context.contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
+                if (uri != null) {
+                    context.contentResolver.openOutputStream(uri)?.use { out ->
+                        FileInputStream(sourceFile).use { input ->
+                            input.copyTo(out)
+                        }
+                    }
+                    true
+                } else {
+                    false
+                }
+            } else {
+                val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                val custodiaDir = File(downloadsDir, "Custodia").apply { if (!exists()) mkdirs() }
+                val targetFile = File(custodiaDir, displayName)
+                sourceFile.copyTo(targetFile, overwrite = true)
+                true
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "saveFileToPublicDownloads failed", e)
+            false
+        }
+    }
+
+    /**
+     * Opens file in external viewer.
+     */
     fun openFile(context: Context, filePath: String, mimeType: String = "") {
         try {
             val file = File(filePath)
-            if (!file.exists()) return
+            if (!file.exists()) {
+                Toast.makeText(context, "File does not exist", Toast.LENGTH_SHORT).show()
+                return
+            }
 
             val uri = FileProvider.getUriForFile(
                 context,
@@ -183,133 +509,47 @@ object FileStorageHelper {
             context.startActivity(intent)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to open file: $filePath", e)
+            Toast.makeText(context, "No app available to open this file", Toast.LENGTH_SHORT).show()
         }
     }
 
     /**
-     * Extracts document details using smart analysis of the selected/captured file.
+     * Renders a PDF page to a Bitmap for in-app preview.
      */
-    fun performSmartOcr(context: Context, filePath: String?, fileName: String?): OcrExtractedData {
-        if (filePath == null && fileName == null) {
-            return OcrExtractedData(null, null, null, null, null, null, "No document file provided")
-        }
+    fun renderPdfPageToBitmap(filePath: String, pageIndex: Int = 0): Pair<Bitmap?, Int> {
+        return try {
+            val file = File(filePath)
+            if (!file.exists()) return Pair(null, 0)
 
-        val name = (fileName ?: File(filePath ?: "").name).lowercase()
-        val sdf = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
-        val currentDate = sdf.format(Date())
+            val pfd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
+            val renderer = PdfRenderer(pfd)
+            val pageCount = renderer.pageCount
 
-        // Analyze file and name to extract real intelligence
-        return when {
-            name.contains("aadhaar") || name.contains("adhar") || name.contains("uid") -> {
-                val randDigits = (1000..9999).random()
-                val randMiddle = (1000..9999).random()
-                OcrExtractedData(
-                    detectedType = "Aadhaar Card",
-                    detectedNumber = "XXXX XXXX $randDigits",
-                    detectedTitle = "Aadhaar Card",
-                    detectedIssuer = "Unique Identification Authority of India (UIDAI)",
-                    detectedIssueDate = currentDate,
-                    detectedExpiryDate = null,
-                    extractedRawText = "GOVERNMENT OF INDIA\nUNIQUE IDENTIFICATION AUTHORITY OF INDIA\nAadhaar - Mera Aadhaar, Meri Pehchaan\nDOB / YOB Extracted\nGender: Specified\nVID / Virtual ID Generated"
-                )
+            if (pageCount == 0) {
+                renderer.close()
+                pfd.close()
+                return Pair(null, 0)
             }
-            name.contains("pan") || name.contains("tax") || name.contains("nsdl") -> {
-                val chars = ('A'..'Z').toList()
-                val randomChars = (1..5).map { chars.random() }.joinToString("")
-                val randomDigits = (1000..9999).random()
-                val lastChar = chars.random()
-                OcrExtractedData(
-                    detectedType = "PAN Card",
-                    detectedNumber = "$randomChars${randomDigits}$lastChar",
-                    detectedTitle = "Permanent Account Number Card",
-                    detectedIssuer = "Income Tax Department, Govt of India",
-                    detectedIssueDate = currentDate,
-                    detectedExpiryDate = null,
-                    extractedRawText = "INCOME TAX DEPARTMENT\nGOVT. OF INDIA\nPermanent Account Number Card\nFather's Name & Signature Verified"
-                )
-            }
-            name.contains("passport") || name.contains("pass") -> {
-                val char = ('A'..'Z').toList().random()
-                val digits = (1000000..9999999).random()
-                OcrExtractedData(
-                    detectedType = "Passport",
-                    detectedNumber = "$char$digits",
-                    detectedTitle = "Passport",
-                    detectedIssuer = "Ministry of External Affairs, India",
-                    detectedIssueDate = currentDate,
-                    detectedExpiryDate = "10 Years from Issue",
-                    extractedRawText = "REPUBLIC OF INDIA / PASSPORT\nType: P, Code: IND\nGiven Names / Surname Extracted\nMachine Readable Zone (MRZ) Verified"
-                )
-            }
-            name.contains("driving") || name.contains("dl") || name.contains("licence") || name.contains("license") -> {
-                val year = (2018..2024).random()
-                val num = (1000000..9999999).random()
-                OcrExtractedData(
-                    detectedType = "Driving Licence",
-                    detectedNumber = "DL-04$year$num",
-                    detectedTitle = "Driving Licence (LMV + MCWG)",
-                    detectedIssuer = "Transport Department, State Licensing Authority",
-                    detectedIssueDate = currentDate,
-                    detectedExpiryDate = "20 Years from Issue",
-                    extractedRawText = "UNION OF INDIA - DRIVING LICENCE\nAuth to Drive: LMV, MCWG\nBlood Group & Emergency Contact Extracted"
-                )
-            }
-            name.contains("birth") || name.contains("janam") -> {
-                val regNo = (10000..99999).random()
-                OcrExtractedData(
-                    detectedType = "Birth Certificate",
-                    detectedNumber = "REG/${(2000..2024).random()}/$regNo",
-                    detectedTitle = "Birth Certificate",
-                    detectedIssuer = "Municipal Corporation / Registrar of Births & Deaths",
-                    detectedIssueDate = currentDate,
-                    detectedExpiryDate = null,
-                    extractedRawText = "CERTIFICATE OF BIRTH\nIssued under Section 12/17 of Registration of Births and Deaths Act\nPlace of Birth, Parents Names Registered"
-                )
-            }
-            name.contains("voter") || name.contains("epic") || name.contains("election") -> {
-                val prefix = ('A'..'Z').toList().shuffled().take(3).joinToString("")
-                val num = (1000000..9999999).random()
-                OcrExtractedData(
-                    detectedType = "Voter ID",
-                    detectedNumber = "$prefix$num",
-                    detectedTitle = "Election Commission Voter ID Card (EPIC)",
-                    detectedIssuer = "Election Commission of India",
-                    detectedIssueDate = currentDate,
-                    detectedExpiryDate = null,
-                    extractedRawText = "ELECTION COMMISSION OF INDIA\nELECTOR PHOTO IDENTITY CARD\nAssembly Constituency Verified"
-                )
-            }
-            name.contains("insurance") || name.contains("policy") || name.contains("lic") || name.contains("mediclaim") -> {
-                val policyNum = (100000000..999999999).random()
-                OcrExtractedData(
-                    detectedType = "Health Insurance",
-                    detectedNumber = "POL-$policyNum",
-                    detectedTitle = "Health / Life Insurance Policy",
-                    detectedIssuer = "Insurance Regulatory & Development Authority (IRDAI)",
-                    detectedIssueDate = currentDate,
-                    detectedExpiryDate = "1 Year Renewable",
-                    extractedRawText = "HEALTH INSURANCE POLICY SCHEDULE\nCashless Card ID Extracted\nSum Insured & TPA Network Active"
-                )
-            }
-            else -> {
-                val cleanTitle = (fileName ?: "Scanned Document")
-                    .substringBeforeLast(".")
-                    .replace("_", " ")
-                    .replace("-", " ")
-                    .split(" ")
-                    .joinToString(" ") { word -> word.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() } }
 
-                val docNum = "DOC-${(100000..999999).random()}"
-                OcrExtractedData(
-                    detectedType = "Identity / Official Document",
-                    detectedNumber = docNum,
-                    detectedTitle = cleanTitle.ifBlank { "Identity Document" },
-                    detectedIssuer = "Authorized Issuing Authority",
-                    detectedIssueDate = currentDate,
-                    detectedExpiryDate = null,
-                    extractedRawText = "DOCUMENT TEXT EXTRACTION COMPLETED\nFile: $fileName\nOCR Verified timestamp: $currentDate"
-                )
-            }
+            val clampedIndex = pageIndex.coerceIn(0, pageCount - 1)
+            val page = renderer.openPage(clampedIndex)
+
+            val densityScale = 2
+            val bitmapWidth = page.width * densityScale
+            val bitmapHeight = page.height * densityScale
+            val bitmap = Bitmap.createBitmap(bitmapWidth, bitmapHeight, Bitmap.Config.ARGB_8888)
+            bitmap.eraseColor(Color.WHITE)
+
+            page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+
+            page.close()
+            renderer.close()
+            pfd.close()
+
+            Pair(bitmap, pageCount)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error rendering PDF page in-app", e)
+            Pair(null, 0)
         }
     }
 }
