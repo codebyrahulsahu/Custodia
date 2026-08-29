@@ -59,14 +59,7 @@ import com.example.data.FamilyMemberProfile
 import com.example.data.MedicalEntry
 import com.example.data.MemberSignature
 import com.example.ui.theme.ElectricCyan
-import com.example.ui.theme.TextMuted
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
 import com.example.ui.theme.TrustTeal
-import com.example.ui.theme.VaultCardBorder
-import com.example.ui.theme.VaultNavy
-import com.example.ui.theme.VaultSurface
-import com.example.ui.theme.VaultSurfaceElevated
 import com.example.ui.theme.VerifiedGreen
 
 @Composable
@@ -87,7 +80,7 @@ fun HomeScreen(
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .background(VaultNavy)
+            .background(androidx.compose.material3.MaterialTheme.colorScheme.background)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
@@ -116,13 +109,13 @@ fun HomeScreen(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp
                     ),
-                    color = TextSecondary
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 Text(
                     text = "Tap to open dossier",
                     fontSize = 11.5.sp,
-                    color = TextMuted
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f)
                 )
             }
         }
@@ -134,8 +127,8 @@ fun HomeScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .background(VaultSurface)
-                        .border(1.dp, VaultCardBorder, RoundedCornerShape(12.dp))
+                        .background(androidx.compose.material3.MaterialTheme.colorScheme.surface)
+                        .border(1.dp, androidx.compose.material3.MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp))
                         .padding(32.dp),
                     contentAlignment = Alignment.Center
                 ) {
@@ -143,17 +136,17 @@ fun HomeScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Icon(Icons.Default.People, contentDescription = null, tint = TextMuted, modifier = Modifier.size(48.dp))
+                        Icon(Icons.Default.People, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f), modifier = Modifier.size(48.dp))
                         Text(
                             text = "No Family Members Added",
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp,
-                            color = TextPrimary
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "Add family members to securely manage their documents, signatures, and health records.",
                             fontSize = 12.sp,
-                            color = TextSecondary,
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(6.dp))
@@ -205,8 +198,8 @@ private fun VaultStatsOverviewBanner(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .background(VaultSurface)
-            .border(1.dp, VaultCardBorder, RoundedCornerShape(14.dp))
+            .background(androidx.compose.material3.MaterialTheme.colorScheme.surface)
+            .border(1.dp, androidx.compose.material3.MaterialTheme.colorScheme.outline, RoundedCornerShape(14.dp))
             .padding(14.dp)
     ) {
         Row(
@@ -219,21 +212,21 @@ private fun VaultStatsOverviewBanner(
                 modifier = Modifier
                     .height(28.dp)
                     .width(1.dp),
-                color = VaultCardBorder
+                color = androidx.compose.material3.MaterialTheme.colorScheme.outline
             )
             StatItem(title = "Documents", count = "$docCount", color = ElectricCyan)
             Divider(
                 modifier = Modifier
                     .height(28.dp)
                     .width(1.dp),
-                color = VaultCardBorder
+                color = androidx.compose.material3.MaterialTheme.colorScheme.outline
             )
             StatItem(title = "Signatures", count = "$sigCount", color = VerifiedGreen)
             Divider(
                 modifier = Modifier
                     .height(28.dp)
                     .width(1.dp),
-                color = VaultCardBorder
+                color = androidx.compose.material3.MaterialTheme.colorScheme.outline
             )
             StatItem(title = "Medical", count = "$medCount", color = Color(0xFFF59E0B))
         }
@@ -252,7 +245,7 @@ private fun StatItem(title: String, count: String, color: Color) {
         Text(
             text = title,
             fontSize = 10.5.sp,
-            color = TextSecondary,
+            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
             fontWeight = FontWeight.Medium
         )
     }
@@ -276,8 +269,8 @@ fun FamilyMemberCard(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .background(VaultSurface)
-            .border(1.dp, VaultCardBorder, RoundedCornerShape(14.dp))
+            .background(androidx.compose.material3.MaterialTheme.colorScheme.surface)
+            .border(1.dp, androidx.compose.material3.MaterialTheme.colorScheme.outline, RoundedCornerShape(14.dp))
             .clickable { onClick() }
             .padding(14.dp)
             .testTag("card_member_${member.name.replace(" ", "_")}")
@@ -317,7 +310,7 @@ fun FamilyMemberCard(
                                 text = member.name,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 15.sp,
-                                color = TextPrimary
+                                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
                             )
                         }
 
@@ -374,16 +367,16 @@ fun FamilyMemberCard(
                             onClick = { menuExpanded = true },
                             modifier = Modifier.size(34.dp)
                         ) {
-                            Icon(Icons.Default.Edit, contentDescription = "Edit Member", tint = TextSecondary, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.Edit, contentDescription = "Edit Member", tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
                         }
 
                         DropdownMenu(
                             expanded = menuExpanded,
                             onDismissRequest = { menuExpanded = false },
-                            modifier = Modifier.background(VaultSurfaceElevated)
+                            modifier = Modifier.background(androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant)
                         ) {
                             DropdownMenuItem(
-                                text = { Text("Edit Profile", color = TextPrimary) },
+                                text = { Text("Edit Profile", color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface) },
                                 onClick = {
                                     menuExpanded = false
                                     onEditClick()
@@ -391,7 +384,7 @@ fun FamilyMemberCard(
                                 leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null, tint = TrustTeal) }
                             )
                             DropdownMenuItem(
-                                text = { Text("Download Full PDF", color = TextPrimary) },
+                                text = { Text("Download Full PDF", color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface) },
                                 onClick = {
                                     menuExpanded = false
                                     onExportPdf()
@@ -412,7 +405,7 @@ fun FamilyMemberCard(
                     Icon(
                         Icons.Default.KeyboardArrowRight,
                         contentDescription = "Open Dossier",
-                        tint = TextMuted,
+                        tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f),
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -426,18 +419,18 @@ fun FamilyMemberCard(
                 Text(
                     text = "DOB: ${member.dob}",
                     fontSize = 11.5.sp,
-                    color = TextSecondary
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 if (member.phone.isNotBlank()) {
                     Text(
                         text = member.phone,
                         fontSize = 11.5.sp,
-                        color = TextSecondary
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
 
-            Divider(color = VaultCardBorder.copy(alpha = 0.6f))
+            Divider(color = androidx.compose.material3.MaterialTheme.colorScheme.outline.copy(alpha = 0.6f))
 
             // Stat Badges: Documents, Signature, Medical
             Row(
@@ -450,7 +443,7 @@ fun FamilyMemberCard(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .clip(RoundedCornerShape(6.dp))
-                        .background(VaultNavy)
+                        .background(androidx.compose.material3.MaterialTheme.colorScheme.background)
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Icon(Icons.Default.Description, contentDescription = null, tint = ElectricCyan, modifier = Modifier.size(13.dp))
@@ -458,7 +451,7 @@ fun FamilyMemberCard(
                     Text(
                         text = "$docCount Docs",
                         fontSize = 11.sp,
-                        color = TextPrimary,
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Medium
                     )
                 }
@@ -468,20 +461,20 @@ fun FamilyMemberCard(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .clip(RoundedCornerShape(6.dp))
-                        .background(VaultNavy)
+                        .background(androidx.compose.material3.MaterialTheme.colorScheme.background)
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Icon(
                         Icons.Default.Draw,
                         contentDescription = null,
-                        tint = if (hasSignature) VerifiedGreen else TextMuted,
+                        tint = if (hasSignature) VerifiedGreen else androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f),
                         modifier = Modifier.size(13.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = if (hasSignature) "Signed" else "No Signature",
                         fontSize = 11.sp,
-                        color = if (hasSignature) VerifiedGreen else TextMuted,
+                        color = if (hasSignature) VerifiedGreen else androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f),
                         fontWeight = FontWeight.Medium
                     )
                 }
@@ -491,7 +484,7 @@ fun FamilyMemberCard(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .clip(RoundedCornerShape(6.dp))
-                        .background(VaultNavy)
+                        .background(androidx.compose.material3.MaterialTheme.colorScheme.background)
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Icon(Icons.Default.MedicalServices, contentDescription = null, tint = Color(0xFFF59E0B), modifier = Modifier.size(13.dp))
@@ -499,7 +492,7 @@ fun FamilyMemberCard(
                     Text(
                         text = "$medCount Medical",
                         fontSize = 11.sp,
-                        color = TextPrimary,
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Medium
                     )
                 }

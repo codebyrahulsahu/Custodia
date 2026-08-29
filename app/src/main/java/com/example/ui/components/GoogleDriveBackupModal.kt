@@ -60,13 +60,7 @@ import com.example.data.DriveBackupInfo
 import com.example.ui.theme.AmberGold
 import com.example.ui.theme.ElectricCyan
 import com.example.ui.theme.CrimsonAlert
-import com.example.ui.theme.TextMuted
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
 import com.example.ui.theme.TrustTeal
-import com.example.ui.theme.VaultCardBorder
-import com.example.ui.theme.VaultNavyDark
-import com.example.ui.theme.VaultSurface
 import com.example.ui.theme.VerifiedGreen
 
 @Composable
@@ -89,8 +83,8 @@ fun GoogleDriveBackupModal(
             modifier = Modifier
                 .fillMaxWidth(0.92f)
                 .clip(RoundedCornerShape(16.dp))
-                .border(1.dp, VaultCardBorder, RoundedCornerShape(16.dp)),
-            color = VaultNavyDark
+                .border(1.dp, androidx.compose.material3.MaterialTheme.colorScheme.outline, RoundedCornerShape(16.dp)),
+            color = androidx.compose.material3.MaterialTheme.colorScheme.surface
         ) {
             Column(
                 modifier = Modifier
@@ -120,18 +114,18 @@ fun GoogleDriveBackupModal(
                             Text(
                                 text = "Google Drive AppData Sync",
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                color = TextPrimary
+                                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 text = "Dedicated AppData Vault",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = TextSecondary
+                                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
 
                     IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
-                        Icon(Icons.Default.Close, contentDescription = "Close", tint = TextMuted)
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f))
                     }
                 }
 
@@ -140,8 +134,8 @@ fun GoogleDriveBackupModal(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .background(VaultSurface)
-                        .border(1.dp, VaultCardBorder, RoundedCornerShape(12.dp))
+                        .background(androidx.compose.material3.MaterialTheme.colorScheme.surface)
+                        .border(1.dp, androidx.compose.material3.MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp))
                         .padding(14.dp)
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -166,12 +160,12 @@ fun GoogleDriveBackupModal(
                                         text = driveAccount.displayName,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 13.5.sp,
-                                        color = TextPrimary
+                                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
                                         text = driveAccount.email,
                                         fontSize = 11.sp,
-                                        color = TextSecondary
+                                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
@@ -183,7 +177,7 @@ fun GoogleDriveBackupModal(
                             }
                         }
 
-                        Divider(color = VaultCardBorder)
+                        Divider(color = androidx.compose.material3.MaterialTheme.colorScheme.outline)
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -193,13 +187,13 @@ fun GoogleDriveBackupModal(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.Folder, contentDescription = null, tint = AmberGold, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("Space: ${driveAccount.appFolder}", fontSize = 11.5.sp, color = TextSecondary)
+                                Text("Space: ${driveAccount.appFolder}", fontSize = 11.5.sp, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant)
                             }
 
                             Text(
                                 text = "Last: ${driveAccount.lastBackupTime ?: "Never"}",
                                 fontSize = 11.sp,
-                                color = TextMuted
+                                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f)
                             )
                         }
                     }
@@ -233,7 +227,7 @@ fun GoogleDriveBackupModal(
                         text = "BACKUP SNAPSHOTS IN APPDATA FOLDER (${backups.size})",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = TextSecondary,
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
                         letterSpacing = 0.5.sp
                     )
 
@@ -242,11 +236,11 @@ fun GoogleDriveBackupModal(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(VaultSurface)
+                                .background(androidx.compose.material3.MaterialTheme.colorScheme.surface)
                                 .padding(16.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("No backups found in Google Drive AppData folder.", color = TextMuted, fontSize = 12.sp)
+                            Text("No backups found in Google Drive AppData folder.", color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f), fontSize = 12.sp)
                         }
                     } else {
                         backups.forEach { backup ->
@@ -254,8 +248,8 @@ fun GoogleDriveBackupModal(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(10.dp))
-                                    .background(VaultSurface)
-                                    .border(1.dp, VaultCardBorder, RoundedCornerShape(10.dp))
+                                    .background(androidx.compose.material3.MaterialTheme.colorScheme.surface)
+                                    .border(1.dp, androidx.compose.material3.MaterialTheme.colorScheme.outline, RoundedCornerShape(10.dp))
                                     .padding(12.dp)
                             ) {
                                 Row(
@@ -268,18 +262,18 @@ fun GoogleDriveBackupModal(
                                             text = backup.formattedDate,
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 13.sp,
-                                            color = TextPrimary
+                                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
                                         )
                                         Spacer(modifier = Modifier.height(2.dp))
                                         Text(
                                             text = "${backup.memberCount} Members • ${backup.documentCount} Docs • ${backup.medicalCount} Med Records • ${backup.signatureCount} Sigs",
                                             fontSize = 11.sp,
-                                            color = TextSecondary
+                                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                         Text(
                                             text = "Size: ${backup.fileSize} • ID: ${backup.driveFileId.take(16)}...",
                                             fontSize = 10.5.sp,
-                                            color = TextMuted
+                                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f)
                                         )
                                     }
 
@@ -289,7 +283,7 @@ fun GoogleDriveBackupModal(
                                                 onClick = { onDeleteBackup(backup.id) },
                                                 modifier = Modifier.size(32.dp)
                                             ) {
-                                                Icon(Icons.Default.DeleteOutline, contentDescription = "Delete", tint = TextMuted, modifier = Modifier.size(18.dp))
+                                                Icon(Icons.Default.DeleteOutline, contentDescription = "Delete", tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f), modifier = Modifier.size(18.dp))
                                             }
                                             Spacer(modifier = Modifier.width(4.dp))
                                         }
@@ -326,7 +320,7 @@ fun GoogleDriveBackupModal(
                     Text(
                         text = "Hidden from general Drive view • Stored in AppData folder",
                         fontSize = 11.sp,
-                        color = TextSecondary
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -339,13 +333,13 @@ fun GoogleDriveBackupModal(
         AlertDialog(
             onDismissRequest = { backupToRestore = null },
             title = {
-                Text("Restore from Google Drive?", color = TextPrimary, fontWeight = FontWeight.Bold)
+                Text("Restore from Google Drive?", color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
                         "This will replace local database records with the snapshot from:",
-                        color = TextSecondary,
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp
                     )
                     Text(
@@ -356,7 +350,7 @@ fun GoogleDriveBackupModal(
                     )
                     Text(
                         "Containing ${b.memberCount} members, ${b.documentCount} documents, ${b.medicalCount} medical entries, and ${b.signatureCount} signatures.",
-                        color = TextMuted,
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f),
                         fontSize = 12.sp
                     )
                 }
@@ -377,10 +371,10 @@ fun GoogleDriveBackupModal(
             },
             dismissButton = {
                 OutlinedButton(onClick = { backupToRestore = null }) {
-                    Text("Cancel", color = TextSecondary)
+                    Text("Cancel", color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             },
-            containerColor = VaultNavyDark
+            containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface
         )
     }
 }

@@ -43,13 +43,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.example.data.FamilyMemberProfile
 import com.example.data.RelationshipType
 import com.example.ui.theme.ElectricCyan
-import com.example.ui.theme.TextMuted
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
 import com.example.ui.theme.TrustTeal
-import com.example.ui.theme.VaultCardBorder
-import com.example.ui.theme.VaultNavyDark
-import com.example.ui.theme.VaultSurface
 
 @Composable
 fun FamilyTreeModal(
@@ -71,8 +65,8 @@ fun FamilyTreeModal(
             modifier = Modifier
                 .fillMaxWidth(0.94f)
                 .clip(RoundedCornerShape(16.dp))
-                .border(1.dp, VaultCardBorder, RoundedCornerShape(16.dp)),
-            color = VaultNavyDark
+                .border(1.dp, androidx.compose.material3.MaterialTheme.colorScheme.outline, RoundedCornerShape(16.dp)),
+            color = androidx.compose.material3.MaterialTheme.colorScheme.surface
         ) {
             Column(
                 modifier = Modifier
@@ -102,18 +96,18 @@ fun FamilyTreeModal(
                             Text(
                                 text = "Family Tree & Lineage",
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                color = TextPrimary
+                                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 text = "${familyMembers.size} Connected Members",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = TextSecondary
+                                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
 
                     IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
-                        Icon(Icons.Default.Close, contentDescription = "Close", tint = TextMuted)
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f))
                     }
                 }
 
@@ -122,8 +116,8 @@ fun FamilyTreeModal(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .background(VaultSurface)
-                        .border(1.dp, VaultCardBorder, RoundedCornerShape(12.dp))
+                        .background(androidx.compose.material3.MaterialTheme.colorScheme.surface)
+                        .border(1.dp, androidx.compose.material3.MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp))
                         .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -150,7 +144,7 @@ fun FamilyTreeModal(
                         }
 
                         // Connecting Arrow
-                        Icon(Icons.Default.ArrowDownward, contentDescription = null, tint = VaultCardBorder, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.ArrowDownward, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.outline, modifier = Modifier.size(18.dp))
                     }
 
                     // GENERATION 2: HEAD & SPOUSE
@@ -178,7 +172,7 @@ fun FamilyTreeModal(
                         }
 
                         if (gen3Children.isNotEmpty()) {
-                            Icon(Icons.Default.ArrowDownward, contentDescription = null, tint = VaultCardBorder, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.ArrowDownward, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.outline, modifier = Modifier.size(18.dp))
                         }
                     }
 
@@ -205,8 +199,8 @@ fun FamilyTreeModal(
                     }
 
                     if (others.isNotEmpty()) {
-                        Divider(color = VaultCardBorder, modifier = Modifier.padding(vertical = 4.dp))
-                        Text("OTHER FAMILY MEMBERS", fontSize = 10.sp, color = TextMuted)
+                        Divider(color = androidx.compose.material3.MaterialTheme.colorScheme.outline, modifier = Modifier.padding(vertical = 4.dp))
+                        Text("OTHER FAMILY MEMBERS", fontSize = 10.sp, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f))
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             others.forEach { member ->
                                 FamilyTreeNode(member = member, onClick = {
@@ -221,7 +215,7 @@ fun FamilyTreeModal(
                 Text(
                     text = "Tip: Tap on any family member card to view their complete dossier, documents, signature, and medical records.",
                     fontSize = 11.sp,
-                    color = TextSecondary,
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -239,8 +233,8 @@ private fun FamilyTreeNode(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .clip(RoundedCornerShape(10.dp))
-            .background(VaultNavyDark)
-            .border(1.dp, VaultCardBorder, RoundedCornerShape(10.dp))
+            .background(androidx.compose.material3.MaterialTheme.colorScheme.surface)
+            .border(1.dp, androidx.compose.material3.MaterialTheme.colorScheme.outline, RoundedCornerShape(10.dp))
             .clickable { onClick() }
             .padding(10.dp)
             .width(100.dp)
@@ -265,14 +259,14 @@ private fun FamilyTreeNode(
             text = member.name,
             fontWeight = FontWeight.Bold,
             fontSize = 11.5.sp,
-            color = TextPrimary,
+            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
             textAlign = TextAlign.Center
         )
         Text(
             text = member.relationship.label,
             fontSize = 9.5.sp,
-            color = TextSecondary,
+            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             textAlign = TextAlign.Center
         )

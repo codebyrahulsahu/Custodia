@@ -28,11 +28,13 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Draw
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.HealthAndSafety
 import androidx.compose.material.icons.filled.LocalHospital
 import androidx.compose.material.icons.filled.MedicalServices
 import androidx.compose.material.icons.filled.PictureAsPdf
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -62,21 +64,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.DocumentItem
+import com.example.data.FileStorageHelper
 import com.example.data.FamilyMemberProfile
 import com.example.data.MedicalEntry
 import com.example.data.MemberSignature
+import com.example.data.PdfExportHelper
 import com.example.ui.MemberTab
 import com.example.ui.components.EditBaselineMedicalModal
 import com.example.ui.components.SignatureDisplayCard
 import com.example.ui.theme.ElectricCyan
-import com.example.ui.theme.TextMuted
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
 import com.example.ui.theme.TrustTeal
-import com.example.ui.theme.VaultCardBorder
-import com.example.ui.theme.VaultNavy
-import com.example.ui.theme.VaultNavyDark
-import com.example.ui.theme.VaultSurface
 import com.example.ui.theme.VerifiedGreen
 
 @Composable
@@ -122,13 +119,13 @@ fun MemberDetailScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(VaultNavy)
+            .background(androidx.compose.material3.MaterialTheme.colorScheme.background)
     ) {
         // Top Back Navigation Row
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(VaultNavyDark)
+                .background(androidx.compose.material3.MaterialTheme.colorScheme.surface)
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -138,14 +135,14 @@ fun MemberDetailScreen(
                     .size(36.dp)
                     .testTag("btn_back_to_family")
             ) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Back to Family", tint = TextPrimary)
+                Icon(Icons.Default.ArrowBack, contentDescription = "Back to Family", tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface)
             }
             Spacer(modifier = Modifier.width(6.dp))
             Text(
                 text = "Back to Family Members",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = TextSecondary
+                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 
@@ -169,7 +166,7 @@ fun MemberDetailScreen(
             item {
                 TabRow(
                     selectedTabIndex = activeTab.ordinal,
-                    containerColor = VaultSurface,
+                    containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface,
                     contentColor = TrustTeal,
                     indicator = { tabPositions ->
                         TabRowDefaults.Indicator(
@@ -181,7 +178,7 @@ fun MemberDetailScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(10.dp))
-                        .border(1.dp, VaultCardBorder, RoundedCornerShape(10.dp))
+                        .border(1.dp, androidx.compose.material3.MaterialTheme.colorScheme.outline, RoundedCornerShape(10.dp))
                 ) {
                     MemberTab.values().forEach { tab ->
                         val isSelected = activeTab == tab
@@ -199,7 +196,7 @@ fun MemberDetailScreen(
                                         text = "${tab.title}$countSuffix",
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                         fontSize = 12.5.sp,
-                                        color = if (isSelected) TrustTeal else TextSecondary
+                                        color = if (isSelected) TrustTeal else androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
@@ -220,7 +217,7 @@ fun MemberDetailScreen(
                             text = "DOCUMENTS (${documents.size})",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
-                            color = TextSecondary,
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
                             letterSpacing = 0.5.sp
                         )
 
@@ -271,10 +268,11 @@ fun MemberDetailScreen(
                         member = member,
                         onDrawClick = onDrawSignatureClick,
                         onDeleteClick = onDeleteSignatureClick,
-                        onDownloadPdfClick = {
-                            if (signature != null) {
-                                onExportSignaturePdf(context, signature)
-                            }
+                        onShareClick = {
+                            signature?.let { FileStorageHelper.shareSignature(context, it, member) }
+                        },
+                        onDownloadClick = {
+                            signature?.let { FileStorageHelper.downloadSignatureToDevice(context, it, member) }
                         }
                     )
                 }
@@ -303,7 +301,7 @@ fun MemberDetailScreen(
                             text = "CONSULTATION & MEDICAL RECORDS (${medicalEntries.size})",
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
-                            color = TextSecondary,
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
                             letterSpacing = 0.5.sp
                         )
 
@@ -337,6 +335,7 @@ fun MemberDetailScreen(
                     items(medicalEntries, key = { it.id }) { entry ->
                         MedicalEntryCard(
                             entry = entry,
+                            member = member,
                             onEditClick = { onEditMedicalEntryClick(entry) },
                             onDeleteClick = { onDeleteMedicalEntryClick(entry.id) },
                             onExportPdfClick = { onExportMedicalEntryPdf(context, entry) }
@@ -374,8 +373,8 @@ private fun MemberProfileHeaderCard(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .background(VaultSurface)
-            .border(1.dp, VaultCardBorder, RoundedCornerShape(14.dp))
+            .background(androidx.compose.material3.MaterialTheme.colorScheme.surface)
+            .border(1.dp, androidx.compose.material3.MaterialTheme.colorScheme.outline, RoundedCornerShape(14.dp))
             .padding(16.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -407,7 +406,7 @@ private fun MemberProfileHeaderCard(
                             text = member.name,
                             fontWeight = FontWeight.ExtraBold,
                             fontSize = 17.sp,
-                            color = TextPrimary
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Row(
@@ -438,7 +437,7 @@ private fun MemberProfileHeaderCard(
                     Button(
                         onClick = onEditClick,
                         shape = RoundedCornerShape(8.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = VaultNavyDark),
+                        colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface),
                         contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 4.dp),
                         modifier = Modifier.height(34.dp)
                     ) {
@@ -461,28 +460,28 @@ private fun MemberProfileHeaderCard(
                 }
             }
 
-            Divider(color = VaultCardBorder)
+            Divider(color = androidx.compose.material3.MaterialTheme.colorScheme.outline)
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column {
-                    Text("Date of Birth", fontSize = 10.5.sp, color = TextMuted)
-                    Text(member.dob, fontSize = 12.5.sp, color = TextPrimary, fontWeight = FontWeight.Medium)
+                    Text("Date of Birth", fontSize = 10.5.sp, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f))
+                    Text(member.dob, fontSize = 12.5.sp, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium)
                 }
 
                 if (member.phone.isNotBlank()) {
                     Column {
-                        Text("Phone", fontSize = 10.5.sp, color = TextMuted)
-                        Text(member.phone, fontSize = 12.5.sp, color = TextPrimary, fontWeight = FontWeight.Medium)
+                        Text("Phone", fontSize = 10.5.sp, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f))
+                        Text(member.phone, fontSize = 12.5.sp, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium)
                     }
                 }
 
                 if (member.email.isNotBlank()) {
                     Column {
-                        Text("Email", fontSize = 10.5.sp, color = TextMuted)
-                        Text(member.email, fontSize = 12.5.sp, color = TextPrimary, fontWeight = FontWeight.Medium)
+                        Text("Email", fontSize = 10.5.sp, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f))
+                        Text(member.email, fontSize = 12.5.sp, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium)
                     }
                 }
             }
@@ -499,8 +498,8 @@ private fun BaselineHealthCard(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(VaultSurface)
-            .border(1.dp, VaultCardBorder, RoundedCornerShape(12.dp))
+            .background(androidx.compose.material3.MaterialTheme.colorScheme.surface)
+            .border(1.dp, androidx.compose.material3.MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp))
             .padding(14.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -516,14 +515,14 @@ private fun BaselineHealthCard(
                         text = "Baseline Health Profile",
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.5.sp,
-                        color = TextPrimary
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
                     )
                 }
 
                 Button(
                     onClick = onEditClick,
                     shape = RoundedCornerShape(6.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = VaultNavyDark),
+                    colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface),
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 2.dp),
                     modifier = Modifier.height(28.dp)
                 ) {
@@ -533,35 +532,35 @@ private fun BaselineHealthCard(
                 }
             }
 
-            Divider(color = VaultCardBorder)
+            Divider(color = androidx.compose.material3.MaterialTheme.colorScheme.outline)
 
             // Health Details Grid
             Row(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Allergies", fontSize = 10.5.sp, color = TextMuted)
-                    Text(member.allergies, fontSize = 12.sp, color = TextPrimary, fontWeight = FontWeight.Medium)
+                    Text("Allergies", fontSize = 10.5.sp, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f))
+                    Text(member.allergies, fontSize = 12.sp, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium)
                 }
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Chronic Conditions", fontSize = 10.5.sp, color = TextMuted)
-                    Text(member.chronicConditions, fontSize = 12.sp, color = TextPrimary, fontWeight = FontWeight.Medium)
+                    Text("Chronic Conditions", fontSize = 10.5.sp, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f))
+                    Text(member.chronicConditions, fontSize = 12.sp, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium)
                 }
             }
 
             Row(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Daily Medications", fontSize = 10.5.sp, color = TextMuted)
-                    Text(member.currentMedications, fontSize = 12.sp, color = TextPrimary, fontWeight = FontWeight.Medium)
+                    Text("Daily Medications", fontSize = 10.5.sp, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f))
+                    Text(member.currentMedications, fontSize = 12.sp, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium)
                 }
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Past Illnesses / Surgeries", fontSize = 10.5.sp, color = TextMuted)
-                    Text(member.pastIllnessesOrSurgeries, fontSize = 12.sp, color = TextPrimary, fontWeight = FontWeight.Medium)
+                    Text("Past Illnesses / Surgeries", fontSize = 10.5.sp, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f))
+                    Text(member.pastIllnessesOrSurgeries, fontSize = 12.sp, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium)
                 }
             }
 
             if (member.doctorNotes.isNotBlank()) {
                 Column {
-                    Text("Doctor's Key Advice", fontSize = 10.5.sp, color = TextMuted)
-                    Text(member.doctorNotes, fontSize = 12.sp, color = TextSecondary)
+                    Text("Doctor's Key Advice", fontSize = 10.5.sp, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f))
+                    Text(member.doctorNotes, fontSize = 12.sp, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -577,13 +576,14 @@ private fun DocumentItemCard(
     onExportPdfClick: () -> Unit
 ) {
     val clipboardManager = LocalClipboardManager.current
+    val context = LocalContext.current
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(VaultSurface)
-            .border(1.dp, VaultCardBorder, RoundedCornerShape(12.dp))
+            .background(androidx.compose.material3.MaterialTheme.colorScheme.surface)
+            .border(1.dp, androidx.compose.material3.MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp))
             .padding(14.dp)
             .testTag("card_doc_${document.title.replace(" ", "_")}")
     ) {
@@ -613,12 +613,12 @@ private fun DocumentItemCard(
                             text = document.title,
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp,
-                            color = TextPrimary
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = document.issuer,
                             fontSize = 11.sp,
-                            color = TextSecondary
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -643,18 +643,18 @@ private fun DocumentItemCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(8.dp))
-                    .background(VaultNavyDark)
+                    .background(androidx.compose.material3.MaterialTheme.colorScheme.surface)
                     .padding(horizontal = 10.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("No: ", fontSize = 11.5.sp, color = TextMuted)
+                    Text("No: ", fontSize = 11.5.sp, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f))
                     Text(
                         text = document.documentNumber,
                         fontSize = 12.5.sp,
                         fontWeight = FontWeight.Bold,
-                        color = TextPrimary
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Icon(
@@ -677,26 +677,28 @@ private fun DocumentItemCard(
             }
 
             // Validity Dates & Action Buttons
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
                     text = "Valid: ${document.issueDate} - ${document.expiryDate ?: "Permanent"}",
                     fontSize = 11.sp,
-                    color = TextSecondary
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
                     IconButton(onClick = onViewClick, modifier = Modifier.size(30.dp)) {
                         Icon(Icons.Default.Visibility, contentDescription = "View", tint = ElectricCyan, modifier = Modifier.size(16.dp))
                     }
-                    IconButton(onClick = onExportPdfClick, modifier = Modifier.size(30.dp)) {
-                        Icon(Icons.Default.PictureAsPdf, contentDescription = "PDF", tint = TrustTeal, modifier = Modifier.size(16.dp))
+                    IconButton(onClick = { FileStorageHelper.shareDocument(context, document) }, modifier = Modifier.size(30.dp)) {
+                        Icon(Icons.Default.Share, contentDescription = "Share original", tint = TrustTeal, modifier = Modifier.size(16.dp))
+                    }
+                    IconButton(onClick = { FileStorageHelper.downloadDocumentToDevice(context, document) }, modifier = Modifier.size(30.dp)) {
+                        Icon(Icons.Default.Download, contentDescription = "Download", tint = ElectricCyan, modifier = Modifier.size(16.dp))
                     }
                     IconButton(onClick = onEditClick, modifier = Modifier.size(30.dp)) {
-                        Icon(Icons.Default.Edit, contentDescription = "Edit", tint = TextSecondary, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.Edit, contentDescription = "Edit", tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
                     }
                     IconButton(onClick = onDeleteClick, modifier = Modifier.size(30.dp)) {
                         Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color(0xFFEF4444), modifier = Modifier.size(16.dp))
@@ -710,16 +712,18 @@ private fun DocumentItemCard(
 @Composable
 private fun MedicalEntryCard(
     entry: MedicalEntry,
+    member: FamilyMemberProfile,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
     onExportPdfClick: () -> Unit
 ) {
+    val context = LocalContext.current
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(VaultSurface)
-            .border(1.dp, VaultCardBorder, RoundedCornerShape(12.dp))
+            .background(androidx.compose.material3.MaterialTheme.colorScheme.surface)
+            .border(1.dp, androidx.compose.material3.MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp))
             .padding(14.dp)
             .testTag("card_medical_${entry.title.replace(" ", "_")}")
     ) {
@@ -749,24 +753,34 @@ private fun MedicalEntryCard(
                             text = entry.title,
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp,
-                            color = TextPrimary
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "${entry.doctorOrClinic} • ${entry.date}",
                             fontSize = 11.5.sp,
-                            color = TextSecondary
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
 
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    IconButton(onClick = onExportPdfClick, modifier = Modifier.size(30.dp)) {
-                        Icon(Icons.Default.PictureAsPdf, contentDescription = "PDF", tint = TrustTeal, modifier = Modifier.size(16.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(1.dp)) {
+                    IconButton(onClick = {
+                        val path = entry.attachedReportPath
+                        if (path != null) FileStorageHelper.openFile(context, path)
+                        else FileStorageHelper.openFile(context, PdfExportHelper.exportSingleMedicalEntryPdf(context, member, entry).absolutePath)
+                    }, modifier = Modifier.size(28.dp)) {
+                        Icon(Icons.Default.Visibility, contentDescription = "View medical record", tint = ElectricCyan, modifier = Modifier.size(16.dp))
                     }
-                    IconButton(onClick = onEditClick, modifier = Modifier.size(30.dp)) {
-                        Icon(Icons.Default.Edit, contentDescription = "Edit", tint = TextSecondary, modifier = Modifier.size(16.dp))
+                    IconButton(onClick = { FileStorageHelper.shareMedicalEntry(context, entry, member) }, modifier = Modifier.size(28.dp)) {
+                        Icon(Icons.Default.Share, contentDescription = "Share medical record", tint = TrustTeal, modifier = Modifier.size(16.dp))
                     }
-                    IconButton(onClick = onDeleteClick, modifier = Modifier.size(30.dp)) {
+                    IconButton(onClick = { FileStorageHelper.downloadMedicalEntryToDevice(context, entry, member) }, modifier = Modifier.size(28.dp)) {
+                        Icon(Icons.Default.Download, contentDescription = "Download medical record", tint = ElectricCyan, modifier = Modifier.size(16.dp))
+                    }
+                    IconButton(onClick = onEditClick, modifier = Modifier.size(28.dp)) {
+                        Icon(Icons.Default.Edit, contentDescription = "Edit", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
+                    }
+                    IconButton(onClick = onDeleteClick, modifier = Modifier.size(28.dp)) {
                         Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color(0xFFEF4444), modifier = Modifier.size(16.dp))
                     }
                 }
@@ -776,7 +790,7 @@ private fun MedicalEntryCard(
             Text(
                 text = entry.notes,
                 fontSize = 12.sp,
-                color = TextSecondary,
+                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
                 lineHeight = 16.sp
             )
 
@@ -786,7 +800,7 @@ private fun MedicalEntryCard(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .clip(RoundedCornerShape(6.dp))
-                        .background(VaultNavyDark)
+                        .background(androidx.compose.material3.MaterialTheme.colorScheme.surface)
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Icon(Icons.Default.AttachFile, contentDescription = null, tint = ElectricCyan, modifier = Modifier.size(13.dp))
@@ -815,8 +829,8 @@ private fun EmptyTabBox(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(VaultSurface)
-            .border(1.dp, VaultCardBorder, RoundedCornerShape(12.dp))
+            .background(androidx.compose.material3.MaterialTheme.colorScheme.surface)
+            .border(1.dp, androidx.compose.material3.MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp))
             .padding(24.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -824,12 +838,12 @@ private fun EmptyTabBox(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Icon(icon, contentDescription = null, tint = TextMuted, modifier = Modifier.size(36.dp))
-            Text(title, fontWeight = FontWeight.Bold, fontSize = 14.5.sp, color = TextPrimary)
+            Icon(icon, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f), modifier = Modifier.size(36.dp))
+            Text(title, fontWeight = FontWeight.Bold, fontSize = 14.5.sp, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface)
             Text(
                 text = description,
                 fontSize = 11.5.sp,
-                color = TextSecondary,
+                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
             Spacer(modifier = Modifier.height(4.dp))

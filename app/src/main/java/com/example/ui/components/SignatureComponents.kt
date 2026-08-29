@@ -33,6 +33,8 @@ import androidx.compose.material.icons.filled.Draw
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Divider
@@ -74,13 +76,7 @@ import com.example.data.FamilyMemberProfile
 import com.example.data.FileStorageHelper
 import com.example.data.MemberSignature
 import com.example.ui.theme.ElectricCyan
-import com.example.ui.theme.TextMuted
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
 import com.example.ui.theme.TrustTeal
-import com.example.ui.theme.VaultCardBorder
-import com.example.ui.theme.VaultNavyDark
-import com.example.ui.theme.VaultSurface
 import com.example.ui.theme.VerifiedGreen
 import java.io.File
 
@@ -90,15 +86,16 @@ fun SignatureDisplayCard(
     member: FamilyMemberProfile,
     onDrawClick: () -> Unit,
     onDeleteClick: () -> Unit,
-    onDownloadPdfClick: () -> Unit,
+    onShareClick: () -> Unit,
+    onDownloadClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(VaultSurface)
-            .border(1.dp, VaultCardBorder, RoundedCornerShape(12.dp))
+            .background(androidx.compose.material3.MaterialTheme.colorScheme.surface)
+            .border(1.dp, androidx.compose.material3.MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp))
             .padding(16.dp)
     ) {
         if (signature != null && (signature.pathPoints.isNotEmpty() || !signature.imageUri.isNullOrBlank())) {
@@ -115,7 +112,7 @@ fun SignatureDisplayCard(
                                 text = "Verified Signature Specimen",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 14.sp,
-                                color = TextPrimary
+                                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Icon(
@@ -128,15 +125,18 @@ fun SignatureDisplayCard(
                         Text(
                             text = "Recorded on ${signature.createdDate} • Type: ${signature.signatureType}",
                             fontSize = 11.5.sp,
-                            color = TextSecondary
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        IconButton(
-                            onClick = onDeleteClick,
-                            modifier = Modifier.size(32.dp)
-                        ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                        IconButton(onClick = onShareClick, modifier = Modifier.size(34.dp)) {
+                            Icon(Icons.Default.Share, contentDescription = "Share signature", tint = TrustTeal, modifier = Modifier.size(18.dp))
+                        }
+                        IconButton(onClick = onDownloadClick, modifier = Modifier.size(34.dp)) {
+                            Icon(Icons.Default.Download, contentDescription = "Download signature", tint = ElectricCyan, modifier = Modifier.size(18.dp))
+                        }
+                        IconButton(onClick = onDeleteClick, modifier = Modifier.size(34.dp)) {
                             Icon(Icons.Default.Delete, contentDescription = "Delete Signature", tint = Color(0xFFEF4444), modifier = Modifier.size(18.dp))
                         }
                     }
@@ -213,31 +213,19 @@ fun SignatureDisplayCard(
                     Text(
                         text = "Certificate: ${signature.certificateTag}",
                         fontSize = 10.5.sp,
-                        color = TextMuted
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f)
                     )
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(
-                            onClick = onDrawClick,
-                            shape = RoundedCornerShape(8.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = VaultNavyDark),
-                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                            modifier = Modifier.height(32.dp)
-                        ) {
-                            Icon(Icons.Default.Draw, contentDescription = null, tint = TrustTeal, modifier = Modifier.size(14.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Update / Re-Upload", fontSize = 11.sp, color = TrustTeal)
-                        }
-
-                        Button(
-                            onClick = onDownloadPdfClick,
-                            shape = RoundedCornerShape(8.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = TrustTeal),
-                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                            modifier = Modifier.height(32.dp)
-                        ) {
-                            Text("Download PDF", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                        }
+                    Button(
+                        onClick = onDrawClick,
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                        modifier = Modifier.height(32.dp)
+                    ) {
+                        Icon(Icons.Default.Draw, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(14.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Update", fontSize = 11.sp, color = MaterialTheme.colorScheme.onPrimaryContainer)
                     }
                 }
             }
@@ -269,12 +257,12 @@ fun SignatureDisplayCard(
                     text = "No Signature Added Yet",
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp,
-                    color = TextPrimary
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = "Draw or upload an image of ${member.name}'s signature from File Manager or Camera for verification and self-attestation.",
                     fontSize = 11.5.sp,
-                    color = TextSecondary,
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
 
@@ -362,8 +350,8 @@ fun SignaturePadDialog(
             modifier = Modifier
                 .fillMaxWidth(0.92f)
                 .clip(RoundedCornerShape(16.dp))
-                .border(1.dp, VaultCardBorder, RoundedCornerShape(16.dp)),
-            color = VaultNavyDark
+                .border(1.dp, androidx.compose.material3.MaterialTheme.colorScheme.outline, RoundedCornerShape(16.dp)),
+            color = androidx.compose.material3.MaterialTheme.colorScheme.surface
         ) {
             Column(
                 modifier = Modifier
@@ -393,25 +381,25 @@ fun SignaturePadDialog(
                             Text(
                                 text = "Signature Vault",
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                color = TextPrimary
+                                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 text = "Member: ${member.name}",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = TextSecondary
+                                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
 
                     IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
-                        Icon(Icons.Default.Close, contentDescription = "Close", tint = TextMuted)
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f))
                     }
                 }
 
                 // Mode Tabs: Draw vs Upload Image
                 TabRow(
                     selectedTabIndex = inputMode.ordinal,
-                    containerColor = VaultSurface,
+                    containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface,
                     contentColor = TrustTeal,
                     indicator = { tabPositions ->
                         TabRowDefaults.Indicator(
@@ -423,7 +411,7 @@ fun SignaturePadDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(8.dp))
-                        .border(1.dp, VaultCardBorder, RoundedCornerShape(8.dp))
+                        .border(1.dp, androidx.compose.material3.MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
                 ) {
                     SignatureInputMode.values().forEach { mode ->
                         val isSelected = inputMode == mode
@@ -435,7 +423,7 @@ fun SignaturePadDialog(
                                     text = mode.title,
                                     fontSize = 11.5.sp,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (isSelected) TrustTeal else TextSecondary
+                                    color = if (isSelected) TrustTeal else androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         )
@@ -453,7 +441,7 @@ fun SignaturePadDialog(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("Ink:", fontSize = 12.sp, color = TextSecondary)
+                            Text("Ink:", fontSize = 12.sp, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant)
                             listOf(
                                 Color(0xFF1E3A8A) to "Blue",
                                 Color(0xFF0F172A) to "Black",
@@ -482,7 +470,7 @@ fun SignaturePadDialog(
                             },
                             modifier = Modifier.size(32.dp)
                         ) {
-                            Icon(Icons.Default.Refresh, contentDescription = "Clear Canvas", tint = TextSecondary)
+                            Icon(Icons.Default.Refresh, contentDescription = "Clear Canvas", tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
 
@@ -567,7 +555,7 @@ fun SignaturePadDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(8.dp))
-                            .background(VaultSurface)
+                            .background(androidx.compose.material3.MaterialTheme.colorScheme.surface)
                             .clickable {
                                 val sampleStrokes = listOf(
                                     listOf(Offset(30f, 70f), Offset(60f, 40f), Offset(90f, 80f), Offset(120f, 40f), Offset(160f, 80f)),
@@ -584,7 +572,7 @@ fun SignaturePadDialog(
                         Text(
                             text = "Or load signature specimen for ${member.name}",
                             fontSize = 11.5.sp,
-                            color = TextSecondary
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
                             text = "Load Specimen",
@@ -599,7 +587,7 @@ fun SignaturePadDialog(
                         Text(
                             text = "Upload a photo or scanned copy of ${member.name}'s signature from your file manager or take a photo of a signed paper.",
                             fontSize = 12.sp,
-                            color = TextSecondary
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
                         )
 
                         Row(
@@ -611,7 +599,7 @@ fun SignaturePadDialog(
                                     filePickerLauncher.launch("image/*")
                                 },
                                 shape = RoundedCornerShape(8.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = VaultSurface),
+                                colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface),
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(40.dp)
@@ -633,7 +621,7 @@ fun SignaturePadDialog(
                                     }
                                 },
                                 shape = RoundedCornerShape(8.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = VaultSurface),
+                                colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface),
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(40.dp)
@@ -653,7 +641,7 @@ fun SignaturePadDialog(
                                     .height(140.dp)
                                     .clip(RoundedCornerShape(8.dp))
                                     .background(Color.White)
-                                    .border(1.dp, VaultCardBorder, RoundedCornerShape(8.dp)),
+                                    .border(1.dp, androidx.compose.material3.MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 AsyncImage(
@@ -687,10 +675,10 @@ fun SignaturePadDialog(
                     Button(
                         onClick = onDismiss,
                         shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = VaultSurface),
+                        colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface),
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("Cancel", color = TextSecondary)
+                        Text("Cancel", color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant)
                     }
 
                     Button(

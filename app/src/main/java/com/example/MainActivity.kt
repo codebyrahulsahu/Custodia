@@ -17,15 +17,21 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,23 +49,33 @@ import com.example.ui.components.FamilyTreeModal
 import com.example.ui.components.GoogleDriveBackupModal
 import com.example.ui.components.SignaturePadDialog
 import com.example.ui.components.ViewDocumentModal
+import com.example.data.FileStorageHelper
+import com.example.data.LocalizationManager
+import com.example.data.appStr
+import com.example.ui.screens.AboutScreen
 import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.MemberDetailScreen
+import com.example.ui.screens.SettingsScreen
 import com.example.ui.theme.MyApplicationTheme
+import com.example.ui.theme.ThemePreferenceManager
 import com.example.ui.theme.TrustTeal
-import com.example.ui.theme.VaultNavy
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ThemePreferenceManager.init(this)
+        LocalizationManager.init(this)
         enableEdgeToEdge()
         setContent {
-            MyApplicationTheme {
+            val themeMode by ThemePreferenceManager.currentThemeMode.collectAsStateWithLifecycle()
+            MyApplicationTheme(themeMode = themeMode) {
                 CustodiaApp()
             }
         }
     }
 }
+
+enum class AppSection(val label: String) { VAULT("Vault"), SETTINGS("Settings"), ABOUT("About") }
 
 @Composable
 fun CustodiaApp(viewModel: CustodiaViewModel = viewModel()) {
@@ -92,6 +108,10 @@ fun CustodiaApp(viewModel: CustodiaViewModel = viewModel()) {
     val showDriveBackupModal by viewModel.showDriveBackupModal.collectAsStateWithLifecycle()
 
     val toastMessage by viewModel.toastMessage.collectAsStateWithLifecycle()
+    val themeMode by ThemePreferenceManager.currentThemeMode.collectAsStateWithLifecycle()
+    val language by LocalizationManager.currentLanguage.collectAsStateWithLifecycle()
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var appSection by remember { mutableStateOf(AppSection.VAULT) }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -101,10 +121,35 @@ fun CustodiaApp(viewModel: CustodiaViewModel = viewModel()) {
                 onFamilyTreeClick = { viewModel.setShowFamilyTreeModal(true) },
                 onDriveBackupClick = { viewModel.setShowDriveBackupModal(true) },
                 onAddMemberClick = { viewModel.openAddMemberModal() },
-                showAddMemberButton = selectedMemberId == null
+                showAddMemberButton = appSection == AppSection.VAULT && selectedMemberId == null
             )
         },
-        containerColor = com.example.ui.theme.BackgroundWhite
+        bottomBar = {
+            NavigationBar(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface) {
+                AppSection.entries.forEach { section ->
+                    val icon = when (section) {
+                        AppSection.VAULT -> Icons.Default.Home
+                        AppSection.SETTINGS -> Icons.Default.Settings
+                        AppSection.ABOUT -> Icons.Default.Info
+                    }
+                    NavigationBarItem(
+                        selected = appSection == section,
+                        onClick = { appSection = section },
+                        icon = { Icon(icon, section.label) },
+                        label = {
+                            Text(
+                                when (section) {
+                                    AppSection.VAULT -> appStr("nav_vault")
+                                    AppSection.SETTINGS -> appStr("nav_settings")
+                                    AppSection.ABOUT -> appStr("nav_about")
+                                }
+                            )
+                        }
+                    )
+                }
+            }
+        },
+        containerColor = androidx.compose.material3.MaterialTheme.colorScheme.background
     ) { innerPadding ->
         Box(
             modifier = Modifier
@@ -112,52 +157,62 @@ fun CustodiaApp(viewModel: CustodiaViewModel = viewModel()) {
                 .padding(innerPadding)
         ) {
             AnimatedContent(
-                targetState = selectedMember,
+                targetState = appSection,
                 transitionSpec = { fadeIn() togetherWith fadeOut() },
-                label = "ScreenTransition"
-            ) { member ->
-                if (member == null) {
-                    HomeScreen(
-                        familyMembers = familyMembers,
-                        documents = documents,
-                        signatures = signatures,
-                        medicalEntries = medicalEntries,
-                        onSelectMember = { memberId -> viewModel.selectMember(memberId) },
-                        onAddMemberClick = { viewModel.openAddMemberModal() },
-                        onEditMemberClick = { mem -> viewModel.openEditMemberModal(mem) },
-                        onDeleteMemberClick = { id -> viewModel.deleteMember(id) },
-                        onExportMemberPdf = { ctx, mem -> viewModel.exportMemberCompletePdf(ctx, mem) }
+                label = "MainSectionTransition"
+            ) { section ->
+                when (section) {
+                    AppSection.SETTINGS -> SettingsScreen(
+                        themeMode = themeMode,
+                        language = language,
+                        onThemeSelected = { ThemePreferenceManager.setThemeMode(context, it) },
+                        onLanguageSelected = { LocalizationManager.setLanguage(context, it) },
+                        onBackupRestoreClick = { viewModel.setShowDriveBackupModal(true) }
                     )
-                } else {
-                    MemberDetailScreen(
-                        member = member,
-                        activeTab = activeMemberTab,
-                        documents = selectedMemberDocuments,
-                        signature = selectedMemberSignature,
-                        medicalEntries = selectedMemberMedicalEntries,
-                        onTabSelected = { tab -> viewModel.setActiveMemberTab(tab) },
-                        onBackClick = { viewModel.selectMember(null) },
-                        onEditMemberClick = { mem -> viewModel.openEditMemberModal(mem) },
-                        onExportMemberPdf = { ctx, mem -> viewModel.exportMemberCompletePdf(ctx, mem) },
-                        // Documents
-                        onAddDocumentClick = { viewModel.openAddDocumentModal() },
-                        onViewDocumentClick = { doc -> viewModel.setViewingDocument(doc) },
-                        onEditDocumentClick = { doc -> viewModel.openEditDocumentModal(doc) },
-                        onDeleteDocumentClick = { docId -> viewModel.deleteDocument(docId) },
-                        onExportDocumentPdf = { ctx, doc -> viewModel.exportDocumentPdf(ctx, doc) },
-                        // Signature
-                        onDrawSignatureClick = { viewModel.openSignatureDialog() },
-                        onDeleteSignatureClick = { viewModel.deleteSignature(member.id) },
-                        onExportSignaturePdf = { ctx, sig -> viewModel.exportSignaturePdf(ctx, sig) },
-                        // Medical
-                        onAddMedicalEntryClick = { viewModel.openAddMedicalModal() },
-                        onEditMedicalEntryClick = { entry -> viewModel.openEditMedicalModal(entry) },
-                        onDeleteMedicalEntryClick = { entryId -> viewModel.deleteMedicalEntry(entryId) },
-                        onExportMedicalEntryPdf = { ctx, entry -> viewModel.exportMedicalEntryPdf(ctx, entry) },
-                        onUpdateBaselineMedical = { id, bg, allergies, chronic, meds, past, notes ->
-                            viewModel.updateMemberBaselineMedical(id, bg, allergies, chronic, meds, past, notes)
+                    AppSection.ABOUT -> AboutScreen()
+                    AppSection.VAULT -> {
+                        val member = selectedMember
+                        if (member == null) {
+                            HomeScreen(
+                                familyMembers = familyMembers,
+                                documents = documents,
+                                signatures = signatures,
+                                medicalEntries = medicalEntries,
+                                onSelectMember = { memberId -> viewModel.selectMember(memberId) },
+                                onAddMemberClick = { viewModel.openAddMemberModal() },
+                                onEditMemberClick = { mem -> viewModel.openEditMemberModal(mem) },
+                                onDeleteMemberClick = { id -> viewModel.deleteMember(id) },
+                                onExportMemberPdf = { ctx, mem -> viewModel.exportMemberCompletePdf(ctx, mem) }
+                            )
+                        } else {
+                            MemberDetailScreen(
+                                member = member,
+                                activeTab = activeMemberTab,
+                                documents = selectedMemberDocuments,
+                                signature = selectedMemberSignature,
+                                medicalEntries = selectedMemberMedicalEntries,
+                                onTabSelected = { tab -> viewModel.setActiveMemberTab(tab) },
+                                onBackClick = { viewModel.selectMember(null) },
+                                onEditMemberClick = { mem -> viewModel.openEditMemberModal(mem) },
+                                onExportMemberPdf = { ctx, mem -> viewModel.exportMemberCompletePdf(ctx, mem) },
+                                onAddDocumentClick = { viewModel.openAddDocumentModal() },
+                                onViewDocumentClick = { doc -> viewModel.setViewingDocument(doc) },
+                                onEditDocumentClick = { doc -> viewModel.openEditDocumentModal(doc) },
+                                onDeleteDocumentClick = { docId -> viewModel.deleteDocument(docId) },
+                                onExportDocumentPdf = { ctx, doc -> viewModel.exportDocumentPdf(ctx, doc) },
+                                onDrawSignatureClick = { viewModel.openSignatureDialog() },
+                                onDeleteSignatureClick = { viewModel.deleteSignature(member.id) },
+                                onExportSignaturePdf = { ctx, sig -> viewModel.exportSignaturePdf(ctx, sig) },
+                                onAddMedicalEntryClick = { viewModel.openAddMedicalModal() },
+                                onEditMedicalEntryClick = { entry -> viewModel.openEditMedicalModal(entry) },
+                                onDeleteMedicalEntryClick = { entryId -> viewModel.deleteMedicalEntry(entryId) },
+                                onExportMedicalEntryPdf = { ctx, entry -> viewModel.exportMedicalEntryPdf(ctx, entry) },
+                                onUpdateBaselineMedical = { id, bg, allergies, chronic, meds, past, notes ->
+                                    viewModel.updateMemberBaselineMedical(id, bg, allergies, chronic, meds, past, notes)
+                                }
+                            )
                         }
-                    )
+                    }
                 }
             }
 
@@ -192,8 +247,6 @@ fun CustodiaApp(viewModel: CustodiaViewModel = viewModel()) {
     // -------------------------------------------------------------------------
     // Modals & Dialogs
     // -------------------------------------------------------------------------
-
-    val context = androidx.compose.ui.platform.LocalContext.current
 
     if (showAddMemberModal) {
         AddEditMemberModal(
@@ -245,7 +298,7 @@ fun CustodiaApp(viewModel: CustodiaViewModel = viewModel()) {
                 viewModel.deleteDocument(doc.id)
             },
             onDownloadPdfClick = { doc ->
-                viewModel.exportDocumentPdf(context, doc)
+                FileStorageHelper.downloadDocumentToDevice(context, doc)
             }
         )
     }

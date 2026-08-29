@@ -50,14 +50,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.data.FamilyMemberProfile
 import com.example.data.RelationshipType
-import com.example.ui.theme.TextMuted
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
 import com.example.ui.theme.TrustTeal
-import com.example.ui.theme.VaultCardBorder
-import com.example.ui.theme.VaultNavyDark
-import com.example.ui.theme.VaultSurface
-import com.example.ui.theme.VaultSurfaceElevated
 
 val AVATAR_COLOR_PALETTE = listOf(
     0xFF0D9488, // Teal
@@ -106,8 +99,8 @@ fun AddEditMemberModal(
             modifier = Modifier
                 .fillMaxWidth(0.92f)
                 .clip(RoundedCornerShape(16.dp))
-                .border(1.dp, VaultCardBorder, RoundedCornerShape(16.dp)),
-            color = VaultNavyDark
+                .border(1.dp, androidx.compose.material3.MaterialTheme.colorScheme.outline, RoundedCornerShape(16.dp)),
+            color = androidx.compose.material3.MaterialTheme.colorScheme.surface
         ) {
             Column(
                 modifier = Modifier
@@ -141,7 +134,7 @@ fun AddEditMemberModal(
                         Text(
                             text = if (memberToEdit == null) "Add Family Member" else "Edit Family Member",
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = TextPrimary
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
                         )
                     }
 
@@ -149,7 +142,7 @@ fun AddEditMemberModal(
                         onClick = onDismiss,
                         modifier = Modifier.size(32.dp)
                     ) {
-                        Icon(Icons.Default.Close, contentDescription = "Close", tint = TextMuted)
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f))
                     }
                 }
 
@@ -158,7 +151,7 @@ fun AddEditMemberModal(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(10.dp))
-                        .background(VaultSurface)
+                        .background(androidx.compose.material3.MaterialTheme.colorScheme.surface)
                         .padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -242,11 +235,11 @@ fun AddEditMemberModal(
                     ExposedDropdownMenu(
                         expanded = relationshipExpanded,
                         onDismissRequest = { relationshipExpanded = false },
-                        modifier = Modifier.background(VaultSurfaceElevated)
+                        modifier = Modifier.background(androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant)
                     ) {
                         RelationshipType.values().forEach { type ->
                             DropdownMenuItem(
-                                text = { Text(type.label, color = TextPrimary) },
+                                text = { Text(type.label, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface) },
                                 onClick = {
                                     relationship = type
                                     relationshipExpanded = false
@@ -291,11 +284,11 @@ fun AddEditMemberModal(
                         ExposedDropdownMenu(
                             expanded = bloodGroupExpanded,
                             onDismissRequest = { bloodGroupExpanded = false },
-                            modifier = Modifier.background(VaultSurfaceElevated)
+                            modifier = Modifier.background(androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant)
                         ) {
                             BLOOD_GROUPS.forEach { bg ->
                                 DropdownMenuItem(
-                                    text = { Text(bg, color = TextPrimary) },
+                                    text = { Text(bg, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface) },
                                     onClick = {
                                         bloodGroup = bg
                                         bloodGroupExpanded = false
@@ -337,10 +330,10 @@ fun AddEditMemberModal(
                     Button(
                         onClick = onDismiss,
                         shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = VaultSurface),
+                        colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface),
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("Cancel", color = TextSecondary)
+                        Text("Cancel", color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant)
                     }
 
                     Button(
@@ -380,12 +373,12 @@ fun AddEditMemberModal(
 @Composable
 fun custodiaTextFieldColors() = OutlinedTextFieldDefaults.colors(
     focusedBorderColor = TrustTeal,
-    unfocusedBorderColor = VaultCardBorder,
+    unfocusedBorderColor = androidx.compose.material3.MaterialTheme.colorScheme.outline,
     focusedLabelColor = TrustTeal,
-    unfocusedLabelColor = TextSecondary,
-    focusedTextColor = TextPrimary,
-    unfocusedTextColor = TextPrimary,
+    unfocusedLabelColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+    focusedTextColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+    unfocusedTextColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
     cursorColor = TrustTeal,
-    focusedContainerColor = VaultSurface,
-    unfocusedContainerColor = VaultSurface
+    focusedContainerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface,
+    unfocusedContainerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface
 )

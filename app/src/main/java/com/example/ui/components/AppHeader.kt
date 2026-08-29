@@ -40,13 +40,7 @@ import androidx.compose.ui.unit.sp
 import com.example.data.DriveAccountInfo
 import com.example.ui.theme.AmberGold
 import com.example.ui.theme.ElectricCyan
-import com.example.ui.theme.TextMuted
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
 import com.example.ui.theme.TrustTeal
-import com.example.ui.theme.VaultCardBorder
-import com.example.ui.theme.VaultNavyDark
-import com.example.ui.theme.VaultSurface
 import com.example.ui.theme.VerifiedGreen
 
 @Composable
@@ -98,12 +92,12 @@ fun AppHeader(
                                 fontWeight = FontWeight.ExtraBold,
                                 letterSpacing = 0.5.sp
                             ),
-                            color = TextPrimary
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "Family Vault & Records",
                             style = MaterialTheme.typography.labelSmall,
-                            color = TextSecondary
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -119,8 +113,8 @@ fun AppHeader(
                         modifier = Modifier
                             .size(38.dp)
                             .clip(CircleShape)
-                            .background(VaultSurface)
-                            .border(1.dp, VaultCardBorder, CircleShape)
+                            .background(androidx.compose.material3.MaterialTheme.colorScheme.surface)
+                            .border(1.dp, androidx.compose.material3.MaterialTheme.colorScheme.outline, CircleShape)
                             .testTag("btn_family_tree")
                     ) {
                         Icon(
@@ -137,8 +131,8 @@ fun AppHeader(
                         modifier = Modifier
                             .size(38.dp)
                             .clip(CircleShape)
-                            .background(VaultSurface)
-                            .border(1.dp, VaultCardBorder, CircleShape)
+                            .background(androidx.compose.material3.MaterialTheme.colorScheme.surface)
+                            .border(1.dp, androidx.compose.material3.MaterialTheme.colorScheme.outline, CircleShape)
                             .testTag("btn_google_drive_backup")
                     ) {
                         Icon(
@@ -177,8 +171,8 @@ fun AppHeader(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(8.dp))
-                    .background(VaultSurface.copy(alpha = 0.8f))
-                    .border(1.dp, VaultCardBorder, RoundedCornerShape(8.dp))
+                    .background(androidx.compose.material3.MaterialTheme.colorScheme.surface.copy(alpha = 0.8f))
+                    .border(1.dp, androidx.compose.material3.MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
                     .clickable { onDriveBackupClick() }
                     .padding(horizontal = 12.dp, vertical = 7.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -195,7 +189,7 @@ fun AppHeader(
                     Text(
                         text = "Google Drive Backup: ${driveAccount.lastBackupTime ?: "Not backed up yet"}",
                         fontSize = 11.5.sp,
-                        color = TextSecondary,
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
                         fontWeight = FontWeight.Medium
                     )
                 }
@@ -219,10 +213,10 @@ private fun SurfaceHeader(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .background(VaultNavyDark)
+            .background(androidx.compose.material3.MaterialTheme.colorScheme.surface)
             .border(
                 width = 1.dp,
-                color = VaultCardBorder,
+                color = androidx.compose.material3.MaterialTheme.colorScheme.outline,
                 shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp)
             )
     ) {

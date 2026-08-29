@@ -56,13 +56,7 @@ import com.example.data.FamilyMemberProfile
 import com.example.data.FileStorageHelper
 import com.example.data.MedicalEntry
 import com.example.ui.theme.ElectricCyan
-import com.example.ui.theme.TextMuted
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
 import com.example.ui.theme.TrustTeal
-import com.example.ui.theme.VaultCardBorder
-import com.example.ui.theme.VaultNavyDark
-import com.example.ui.theme.VaultSurface
 import com.example.ui.theme.VerifiedGreen
 import java.io.File
 
@@ -132,8 +126,8 @@ fun AddEditMedicalEntryDialog(
             modifier = Modifier
                 .fillMaxWidth(0.92f)
                 .clip(RoundedCornerShape(16.dp))
-                .border(1.dp, VaultCardBorder, RoundedCornerShape(16.dp)),
-            color = VaultNavyDark
+                .border(1.dp, androidx.compose.material3.MaterialTheme.colorScheme.outline, RoundedCornerShape(16.dp)),
+            color = androidx.compose.material3.MaterialTheme.colorScheme.surface
         ) {
             Column(
                 modifier = Modifier
@@ -163,18 +157,18 @@ fun AddEditMedicalEntryDialog(
                             Text(
                                 text = if (entryToEdit == null) "Add Medical Consultation" else "Edit Medical Record",
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                color = TextPrimary
+                                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 text = "Patient: ${selectedMember.name}",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = TextSecondary
+                                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
 
                     IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
-                        Icon(Icons.Default.Close, contentDescription = "Close", tint = TextMuted)
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f))
                     }
                 }
 
@@ -236,8 +230,8 @@ fun AddEditMedicalEntryDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(10.dp))
-                        .background(VaultSurface)
-                        .border(1.dp, VaultCardBorder, RoundedCornerShape(10.dp))
+                        .background(androidx.compose.material3.MaterialTheme.colorScheme.surface)
+                        .border(1.dp, androidx.compose.material3.MaterialTheme.colorScheme.outline, RoundedCornerShape(10.dp))
                         .padding(12.dp)
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -250,7 +244,7 @@ fun AddEditMedicalEntryDialog(
                                 text = "ATTACH PRESCRIPTION / LAB REPORT",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = TextSecondary,
+                                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
                                 letterSpacing = 0.5.sp
                             )
                         }
@@ -264,7 +258,7 @@ fun AddEditMedicalEntryDialog(
                                     filePickerLauncher.launch("*/*")
                                 },
                                 shape = RoundedCornerShape(8.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = VaultNavyDark),
+                                colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface),
                                 modifier = Modifier.weight(1f).height(38.dp)
                             ) {
                                 Icon(Icons.Default.FolderOpen, contentDescription = null, tint = ElectricCyan, modifier = Modifier.size(16.dp))
@@ -283,7 +277,7 @@ fun AddEditMedicalEntryDialog(
                                     }
                                 },
                                 shape = RoundedCornerShape(8.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = VaultNavyDark),
+                                colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface),
                                 modifier = Modifier.weight(1f).height(38.dp)
                             ) {
                                 Icon(Icons.Default.CameraAlt, contentDescription = null, tint = TrustTeal, modifier = Modifier.size(16.dp))
@@ -297,7 +291,7 @@ fun AddEditMedicalEntryDialog(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(8.dp))
-                                    .background(VaultNavyDark)
+                                    .background(androidx.compose.material3.MaterialTheme.colorScheme.surface)
                                     .padding(horizontal = 10.dp, vertical = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
@@ -311,7 +305,7 @@ fun AddEditMedicalEntryDialog(
                                     Text(
                                         text = attachedReportName.ifBlank { "Attached_Report" },
                                         fontSize = 11.5.sp,
-                                        color = TextPrimary,
+                                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
                                         maxLines = 1
                                     )
                                 }
@@ -350,10 +344,10 @@ fun AddEditMedicalEntryDialog(
                     Button(
                         onClick = onDismiss,
                         shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = VaultSurface),
+                        colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface),
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("Cancel", color = TextSecondary)
+                        Text("Cancel", color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant)
                     }
 
                     Button(

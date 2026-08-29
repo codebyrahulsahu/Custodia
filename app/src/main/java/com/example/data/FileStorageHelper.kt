@@ -1,5 +1,6 @@
 package com.example.data
 
+import android.app.Activity
 import android.content.ClipData
 import android.content.ContentValues
 import android.content.Context
@@ -105,13 +106,20 @@ object FileStorageHelper {
             val uniqueFileName = "${UUID.randomUUID().toString().take(8)}_$safeName"
             val destFile = File(targetFolder, uniqueFileName)
 
-            contentResolver.openInputStream(sourceUri)?.use { input ->
+            val inputStream = contentResolver.openInputStream(sourceUri)
+                ?: throw IllegalStateException("Unable to read the selected file")
+            inputStream.use { input ->
                 FileOutputStream(destFile).use { output ->
                     input.copyTo(output)
+                    output.fd.sync()
                 }
             }
 
             val actualSize = destFile.length()
+            if (actualSize <= 0L) {
+                destFile.delete()
+                throw IllegalStateException("The selected file is empty")
+            }
             val sizeFormatted = formatFileSize(actualSize)
             val isImage = mimeType.startsWith("image/") || extension in listOf("jpg", "jpeg", "png", "webp")
 
@@ -163,9 +171,47 @@ object FileStorageHelper {
         }
     }
 
+    /** Copies a vault file to a short-lived cache location with its original display name.
+     * This is important because many receiving apps use the FileProvider URI's final name.
+     */
+    private fun prepareShareFile(context: Context, source: File, displayName: String): File {
+        val shareDir = File(context.cacheDir, "shared_files").apply { mkdirs() }
+        val safeName = displayName.replace("[^a-zA-Z0-9._ -]".toRegex(), "_")
+            .ifBlank { source.name }
+        return File(shareDir, safeName).also { target ->
+            if (source.absolutePath != target.absolutePath) source.copyTo(target, overwrite = true)
+        }
+    }
+
+    private fun launchFileShare(
+        context: Context,
+        source: File,
+        displayName: String,
+        subject: String,
+        message: String,
+        chooserTitle: String
+    ) {
+        val shareFile = prepareShareFile(context, source, displayName)
+        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", shareFile)
+        val mimeType = inferMimeType(displayName)
+        val sendIntent = Intent(Intent.ACTION_SEND).apply {
+            type = mimeType
+            putExtra(Intent.EXTRA_STREAM, uri)
+            putExtra(Intent.EXTRA_SUBJECT, subject)
+            putExtra(Intent.EXTRA_TEXT, message)
+            clipData = ClipData.newUri(context.contentResolver, displayName, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        val chooser = Intent.createChooser(sendIntent, chooserTitle).apply {
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            if (context !is Activity) addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(chooser)
+    }
+
     /**
      * Shares the real document file (PDF as PDF, Image as Image) via Android system share sheet.
-     * If no physical file was uploaded, seamlessly generates and shares the official PDF summary!
+     * If no physical file was uploaded, seamlessly generates and shares the official PDF summary.
      */
     fun shareDocument(
         context: Context,
@@ -175,26 +221,15 @@ object FileStorageHelper {
         try {
             if (document.filePath != null && File(document.filePath).exists()) {
                 val file = File(document.filePath)
-                val uri = FileProvider.getUriForFile(
-                    context,
-                    "${context.packageName}.fileprovider",
-                    file
+                val displayName = document.fileName ?: file.name
+                launchFileShare(
+                    context = context,
+                    source = file,
+                    displayName = displayName,
+                    subject = "${document.title} - ${document.memberName}",
+                    message = "Shared from Custodia Vault: ${document.title}",
+                    chooserTitle = "Share original document"
                 )
-                val mimeType = inferMimeType(document.fileName ?: file.name)
-
-                val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                    type = mimeType
-                    putExtra(Intent.EXTRA_STREAM, uri)
-                    clipData = ClipData.newRawUri(document.title, uri)
-                    putExtra(Intent.EXTRA_SUBJECT, "${document.title} - ${document.memberName}")
-                    putExtra(Intent.EXTRA_TEXT, "Shared from Custodia Vault: ${document.title} (${document.documentType} - ${document.documentNumber})")
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                }
-
-                val chooser = Intent.createChooser(shareIntent, "Share Document (${if (mimeType == "application/pdf") "PDF" else "Image"})").apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                context.startActivity(chooser)
             } else {
                 // Generate official PDF Dossier and share
                 val resolvedMember = member ?: FamilyMemberProfile(name = document.memberName)
@@ -220,30 +255,15 @@ object FileStorageHelper {
         try {
             if (filePath != null && File(filePath).exists()) {
                 val file = File(filePath)
-                val uri = FileProvider.getUriForFile(
-                    context,
-                    "${context.packageName}.fileprovider",
-                    file
-                )
                 val displayName = originalFileName ?: file.name
-                val mimeType = inferMimeType(displayName)
-
-                val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                    type = mimeType
-                    putExtra(Intent.EXTRA_STREAM, uri)
-                    clipData = ClipData.newRawUri(displayName, uri)
-                    putExtra(Intent.EXTRA_SUBJECT, title)
-                    putExtra(Intent.EXTRA_TEXT, "Shared from Custodia Vault: $title")
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                }
-
-                val chooser = Intent.createChooser(
-                    shareIntent,
-                    "Share Document (${if (mimeType == "application/pdf") "PDF" else "Image"})"
-                ).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                context.startActivity(chooser)
+                launchFileShare(
+                    context = context,
+                    source = file,
+                    displayName = displayName,
+                    subject = title,
+                    message = "Shared from Custodia Vault: $title",
+                    chooserTitle = "Share original document"
+                )
             } else {
                 Toast.makeText(
                     context,
@@ -305,23 +325,14 @@ object FileStorageHelper {
             } else {
                 val sigFile = createSignatureImageFile(context, signature)
                 if (sigFile != null && sigFile.exists()) {
-                    val uri = FileProvider.getUriForFile(
-                        context,
-                        "${context.packageName}.fileprovider",
-                        sigFile
+                    launchFileShare(
+                        context = context,
+                        source = sigFile,
+                        displayName = "Signature_${signature.signerName.replace(" ", "_")}.${sigFile.extension.ifBlank { "png" }}",
+                        subject = "Signature - ${signature.signerName}",
+                        message = "Signature specimen for ${signature.signerName} • ${signature.certificateTag}",
+                        chooserTitle = "Share signature"
                     )
-                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                        type = "image/png"
-                        putExtra(Intent.EXTRA_STREAM, uri)
-                        clipData = ClipData.newRawUri(signature.signerName, uri)
-                        putExtra(Intent.EXTRA_SUBJECT, "Signature - ${signature.signerName}")
-                        putExtra(Intent.EXTRA_TEXT, "Digital Signature Specimen for ${signature.signerName} • Custodia Vault (${signature.certificateTag})")
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    }
-                    val chooser = Intent.createChooser(shareIntent, "Share Signature").apply {
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    }
-                    context.startActivity(chooser)
                 } else {
                     Toast.makeText(context, "Could not generate signature image", Toast.LENGTH_SHORT).show()
                 }
@@ -353,9 +364,9 @@ object FileStorageHelper {
                 val targetName = if (asPdf) {
                     "Signature_${signature.signerName.replace(" ", "_")}.pdf"
                 } else {
-                    "Signature_${signature.signerName.replace(" ", "_")}.png"
+                    "Signature_${signature.signerName.replace(" ", "_")}.${sourceFile.extension.ifBlank { "png" }}"
                 }
-                val mime = if (asPdf) "application/pdf" else "image/png"
+                val mime = if (asPdf) "application/pdf" else inferMimeType(targetName)
                 val saved = saveFileToPublicDownloads(context, sourceFile, targetName, mime)
                 if (saved) {
                     Toast.makeText(context, "Downloaded signature to device: $targetName", Toast.LENGTH_LONG).show()
@@ -382,24 +393,14 @@ object FileStorageHelper {
         try {
             if (entry.attachedReportPath != null && File(entry.attachedReportPath).exists()) {
                 val file = File(entry.attachedReportPath)
-                val uri = FileProvider.getUriForFile(
-                    context,
-                    "${context.packageName}.fileprovider",
-                    file
+                launchFileShare(
+                    context = context,
+                    source = file,
+                    displayName = entry.attachedReportName ?: file.name,
+                    subject = "Medical Report: ${entry.title}",
+                    message = "Medical record: ${entry.title} (${entry.date}) • ${entry.doctorOrClinic}",
+                    chooserTitle = "Share medical report"
                 )
-                val mimeType = inferMimeType(entry.attachedReportName ?: file.name)
-                val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                    type = mimeType
-                    putExtra(Intent.EXTRA_STREAM, uri)
-                    clipData = ClipData.newRawUri(entry.title, uri)
-                    putExtra(Intent.EXTRA_SUBJECT, "Medical Report: ${entry.title}")
-                    putExtra(Intent.EXTRA_TEXT, "Medical Consultation Record: ${entry.title} (${entry.date}) • Doctor: ${entry.doctorOrClinic}")
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                }
-                val chooser = Intent.createChooser(shareIntent, "Share Medical Report").apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                context.startActivity(chooser)
             } else {
                 val resolvedMember = member ?: FamilyMemberProfile(name = "Family Member")
                 val pdfFile = PdfExportHelper.exportSingleMedicalEntryPdf(context, resolvedMember, entry)

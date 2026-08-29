@@ -69,13 +69,7 @@ import com.example.data.DocumentItem
 import com.example.data.FamilyMemberProfile
 import com.example.data.FileStorageHelper
 import com.example.ui.theme.ElectricCyan
-import com.example.ui.theme.TextMuted
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
 import com.example.ui.theme.TrustTeal
-import com.example.ui.theme.VaultCardBorder
-import com.example.ui.theme.VaultNavyDark
-import com.example.ui.theme.VaultSurface
 import com.example.ui.theme.VerifiedGreen
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -183,8 +177,8 @@ fun AddEditDocumentDialog(
             modifier = Modifier
                 .fillMaxWidth(0.92f)
                 .clip(RoundedCornerShape(16.dp))
-                .border(1.dp, VaultCardBorder, RoundedCornerShape(16.dp)),
-            color = VaultNavyDark
+                .border(1.dp, androidx.compose.material3.MaterialTheme.colorScheme.outline, RoundedCornerShape(16.dp)),
+            color = androidx.compose.material3.MaterialTheme.colorScheme.surface
         ) {
             Column(
                 modifier = Modifier
@@ -219,18 +213,18 @@ fun AddEditDocumentDialog(
                             Text(
                                 text = if (documentToEdit == null) "Add Document" else "Edit Document",
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                color = TextPrimary
+                                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 text = "Member: ${selectedMember.name}",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = TextSecondary
+                                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
 
                     IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
-                        Icon(Icons.Default.Close, contentDescription = "Close", tint = TextMuted)
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f))
                     }
                 }
 
@@ -239,8 +233,8 @@ fun AddEditDocumentDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .background(VaultSurface)
-                        .border(1.dp, VaultCardBorder, RoundedCornerShape(12.dp))
+                        .background(androidx.compose.material3.MaterialTheme.colorScheme.surface)
+                        .border(1.dp, androidx.compose.material3.MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp))
                         .padding(14.dp)
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -253,7 +247,7 @@ fun AddEditDocumentDialog(
                                 text = "ATTACH DOCUMENT FILE",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = TextSecondary,
+                                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
                                 letterSpacing = 0.5.sp
                             )
 
@@ -280,7 +274,7 @@ fun AddEditDocumentDialog(
                                     filePickerLauncher.launch("*/*")
                                 },
                                 shape = RoundedCornerShape(8.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = VaultNavyDark),
+                                colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface),
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(38.dp)
@@ -304,7 +298,7 @@ fun AddEditDocumentDialog(
                                     }
                                 },
                                 shape = RoundedCornerShape(8.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = VaultNavyDark),
+                                colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface),
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(38.dp)
@@ -322,8 +316,8 @@ fun AddEditDocumentDialog(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(8.dp))
-                                    .background(VaultNavyDark)
-                                    .border(1.dp, VaultCardBorder, RoundedCornerShape(8.dp))
+                                    .background(androidx.compose.material3.MaterialTheme.colorScheme.surface)
+                                    .border(1.dp, androidx.compose.material3.MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
                                     .padding(8.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
@@ -339,7 +333,7 @@ fun AddEditDocumentDialog(
                                             modifier = Modifier
                                                 .size(42.dp)
                                                 .clip(RoundedCornerShape(6.dp))
-                                                .border(1.dp, VaultCardBorder, RoundedCornerShape(6.dp)),
+                                                .border(1.dp, androidx.compose.material3.MaterialTheme.colorScheme.outline, RoundedCornerShape(6.dp)),
                                             contentScale = ContentScale.Crop
                                         )
                                     } else {
@@ -361,13 +355,13 @@ fun AddEditDocumentDialog(
                                             text = attachedFileName ?: "Document File",
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 12.sp,
-                                            color = TextPrimary,
+                                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
                                             maxLines = 1
                                         )
                                         Text(
                                             text = "$attachedFileSize • $attachedFileType",
                                             fontSize = 10.5.sp,
-                                            color = TextSecondary
+                                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
                                 }
@@ -429,10 +423,10 @@ fun AddEditDocumentDialog(
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(12.dp))
-                                    .background(if (isSelected) TrustTeal.copy(alpha = 0.25f) else VaultSurface)
+                                    .background(if (isSelected) TrustTeal.copy(alpha = 0.25f) else androidx.compose.material3.MaterialTheme.colorScheme.surface)
                                     .border(
                                         width = 1.dp,
-                                        color = if (isSelected) TrustTeal else VaultCardBorder,
+                                        color = if (isSelected) TrustTeal else androidx.compose.material3.MaterialTheme.colorScheme.outline,
                                         shape = RoundedCornerShape(12.dp)
                                     )
                                     .clickable {
@@ -451,7 +445,7 @@ fun AddEditDocumentDialog(
                                 Text(
                                     text = presetType,
                                     fontSize = 10.5.sp,
-                                    color = if (isSelected) TrustTeal else TextSecondary,
+                                    color = if (isSelected) TrustTeal else androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                                 )
                             }
@@ -535,13 +529,13 @@ fun AddEditDocumentDialog(
                         onCheckedChange = { isPermanent = it },
                         colors = CheckboxDefaults.colors(
                             checkedColor = TrustTeal,
-                            uncheckedColor = TextSecondary
+                            uncheckedColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     )
                     Text(
                         text = "Permanent Document (No Expiry Date)",
                         fontSize = 12.5.sp,
-                        color = TextPrimary
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
                     )
                 }
 
@@ -566,10 +560,10 @@ fun AddEditDocumentDialog(
                     Button(
                         onClick = onDismiss,
                         shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = VaultSurface),
+                        colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface),
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("Cancel", color = TextSecondary)
+                        Text("Cancel", color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant)
                     }
 
                     Button(
